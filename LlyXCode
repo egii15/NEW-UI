@@ -33,4 +33,4 @@ end
 
 makeButton("Tombol 1", 0.1, "")
 makeButton("Tombol 2", 0.4, "")
-makeButton("Tombol 3", 0.7, "")
+makeButton("Tombol1 3", 0.7, "")
