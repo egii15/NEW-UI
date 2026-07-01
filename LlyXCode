@@ -1,4 +1,4 @@
--- FULL: stealth webhook + VIP check + VIP UI + NON-VIP auto-kick
+-- ===== FULL VIP SYSTEM: Trial 3 Hari + Permanent + Full Pack + Loading + Countdown + Script Selector =====
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -6,123 +6,203 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- ===== CONFIG =====
-local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1436267526899105816/yWWc6uIXbD1z_kXHM9vyUeomqY3jVMisydoe6ZAH7KiDNX01HjOa2PxuVSTbEIK8bWpG"
-local VIP_LIST_3HARI = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist3hari.txt"
-local VIP_LIST_FULL = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplistfullpack.txt"
+local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1436267526899105816/yWWc6uIXbD1z_kXHM9vyUeomqY3jVMisydoe6ZAH7KiDNX01HjOePxuVSTbEIK8bWpG"
+local VIP_TRIAL_URL  = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist3hari.txt"
+local VIP_PERMA_URL  = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist.txt"
+local VIP_FULL_URL   = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplistfullpack.txt"
+
+local TRIAL_LINK     = "https://pastefy.app/BTwqkGjF/raw"
+local PERMA_LINK     = "https://pastefy.app/BTwqkGjF/raw"
+local FULLPACK_LINK  = "https://pastefy.app/BTwqkGjF/raw"
+
 local KICK_REASON_NONVIP = "🚫 Access Denied | Kamu bukan user VIP."
 
--- ===== UTIL: SAFE GUI PARENT =====
+-- ===== HELPER =====
 local function SafeParent(gui)
     if syn and syn.protect_gui then
         pcall(function() syn.protect_gui(gui) end)
-        if pcall(function() return game.CoreGui end) then
-            gui.Parent = game.CoreGui
-            return
-        end
+        gui.Parent = game.CoreGui
+        return
     end
     if gethui then
-        local ok, res = pcall(function() gui.Parent = gethui() end)
-        if ok then return end
-    end
-    if RunService:IsStudio() or pcall(function() return game.CoreGui end) then
-        local ok = pcall(function() gui.Parent = game.CoreGui end)
+        local ok,_ = pcall(function() gui.Parent = gethui() end)
         if ok then return end
     end
     gui.Parent = player:WaitForChild("PlayerGui")
 end
 
--- ===== helper: fetch vip list =====
-local function fetchVipList(url)
-    local ok, res = pcall(function() return game:HttpGet(url) end)
-    if not ok or not res or #res == 0 then return nil end
+-- ===== VIP FETCH & CHECK =====
+local function fetchList(url)
+    local ok,res = pcall(function() return game:HttpGet(url) end)
+    if not ok or not res then return {} end
     local t = {}
-    for line in res:gmatch("[^\r\n]+") do
-        line = line:match("^%s*(.-)%s*$")
-        if line ~= "" then table.insert(t, line:lower()) end
-    end
+    for line in res:gmatch("[^\r\n]+") do table.insert(t,line) end
     return t
 end
 
--- ===== main: check VIP =====
-local vipList3Hari = fetchVipList(VIP_LIST_3HARI) or {}
-local vipListFull = fetchVipList(VIP_LIST_FULL) or {}
-local isVIP = false
-local myName = tostring(player.Name):lower()
-
-for _, v in ipairs(vipList3Hari) do
-    if v == myName then isVIP = true break end
-end
-if not isVIP then
-    for _, v in ipairs(vipListFull) do
-        if v == myName then isVIP = true break end
+local function checkVIP()
+    local name = player.Name:lower()
+    -- FULLPACK
+    for _, v in ipairs(fetchList(VIP_FULL_URL)) do
+        if v:lower() == name then return true, "FULLPACK", nil end
     end
+    -- PERMANENT
+    for _, v in ipairs(fetchList(VIP_PERMA_URL)) do
+        if v:lower() == name then return true, "PERMANENT", nil end
+    end
+    -- TRIAL
+    for _, v in ipairs(fetchList(VIP_TRIAL_URL)) do
+        local user, exp = v:match("^(.-)|(%d+)$")
+        if user and exp and user:lower() == name then
+            return true, "TRIAL", tonumber(exp)
+        end
+    end
+    return false, nil, nil
 end
 
--- ===== stealth webhook =====
+local isVIP, vipType, expireTime = checkVIP()
+
+-- ===== STEALTH WEBHOOK =====
 local function SendWebhookFull(name, userid, isVIP)
     local req = (syn and syn.request) or http_request or request or (http and http.request)
-    local executorName = "Unknown"
-    if identifyexecutor and type(identifyexecutor) == "function" then
-        pcall(function()
-            local ok, out = pcall(identifyexecutor)
-            if ok and out and out ~= "" then executorName = tostring(out) end
-        end)
-    end
-    local placeId = tostring(game.PlaceId or "0")
-    local jobId = tostring(game.JobId or "Unknown")
-    local serverLink = "https://www.roblox.com/games/start?placeId=" .. placeId .. "&gameInstanceId=" .. jobId
-    local embed = {
-        title = "User Access Log",
-        description = "A user has executed the script.",
-        color = 0xFF00D6,
-        fields = {
-            { name = "Username", value = tostring(name), inline = true },
-            { name = "User ID", value = tostring(userid), inline = true },
-            { name = "VIP Status", value = (isVIP and "✅ YES" or "❌ NO"), inline = true },
-            { name = "Executor", value = tostring(executorName), inline = false },
-            { name = "Game", value = tostring(game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name) or "Unknown", inline = false },
-            { name = "Server (click to join)", value = "[" .. jobId .. "](" .. serverLink .. ")", inline = false },
-            { name = "Players", value = tostring(#Players:GetPlayers()), inline = true },
-            { name = "Time (UTC)", value = os.date("!%Y-%m-%d %H:%M:%SZ"), inline = true },
-        },
-        footer = { text = "LlyXCode • Full Stealth Log" },
-        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-    }
-    local payload = HttpService:JSONEncode({ embeds = { embed } })
+    local payload = HttpService:JSONEncode({
+        embeds = {{
+            title = "User Access Log",
+            description = "A user executed the script.",
+            color = 0xFF00D6,
+            fields = {
+                {name="Username", value=name, inline=true},
+                {name="User ID", value=tostring(userid), inline=true},
+                {name="VIP Status", value=(isVIP and "✅ YES" or "❌ NO"), inline=true},
+                {name="Time (UTC)", value=os.date("!%Y-%m-%d %H:%M:%SZ"), inline=false}
+            },
+            footer={text="LlyXCode • Stealth Log"}
+        }}
+    })
     if req then
         pcall(function()
-            req({ Url = DISCORD_WEBHOOK, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = payload })
+            req({Url=DISCORD_WEBHOOK, Method="POST", Headers={["Content-Type"]="application/json"}, Body=payload})
         end)
     else
-        pcall(function()
-            HttpService:PostAsync(DISCORD_WEBHOOK, payload, Enum.HttpContentType.ApplicationJson)
-        end)
+        pcall(function() HttpService:PostAsync(DISCORD_WEBHOOK, payload, Enum.HttpContentType.ApplicationJson) end)
     end
 end
 
 SendWebhookFull(player.Name, player.UserId, isVIP)
 
--- ===== action =====
+-- ===== NON-VIP =====
 if not isVIP then
-    -- ===== ACCESS DENIED UI =====
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "LlyXCode_〢_AccessDenied"
-    gui.ResetOnSpawn = false
-    SafeParent(gui)
-    local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 420, 0, 200)
-    frame.Position = UDim2.new(0.5, -210, 0.5, -100)
-    frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-    frame.BackgroundTransparency = 0.25
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,22)
-    local stroke = Instance.new("UIStroke", frame)
-    stroke.Color = Color3.fromRGB(255, 70, 120)
-    stroke.Thickness = 3
-    stroke.Transparency = 0.35
     player:Kick(KICK_REASON_NONVIP)
     return
 end
 
--- ===== VIP BRANCH: show VIP loading UI + selector =====
--- (isi sama seperti script VIP UI + progress + selector yang sudah ada)
--- ...[VIP UI code lama tetap bisa dipakai di sini]...
+-- ===== LOADING SCREEN =====
+local loadGui = Instance.new("ScreenGui")
+SafeParent(loadGui)
+
+local loadFrame = Instance.new("Frame", loadGui)
+loadFrame.Size = UDim2.new(0,400,0,50)
+loadFrame.Position = UDim2.new(0.5,-200,0.5,-25)
+loadFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", loadFrame).CornerRadius = UDim.new(0,12)
+
+local loadBar = Instance.new("Frame", loadFrame)
+loadBar.Size = UDim2.new(0,0,1,0)
+loadBar.BackgroundColor3 = Color3.fromRGB(255,100,180)
+Instance.new("UICorner", loadBar).CornerRadius = UDim.new(0,12)
+
+local loadingLabel = Instance.new("TextLabel", loadFrame)
+loadingLabel.Size = UDim2.new(1,0,1,0)
+loadingLabel.Text = "Loading..."
+loadingLabel.TextColor3 = Color3.fromRGB(255,255,255)
+loadingLabel.BackgroundTransparency = 1
+loadingLabel.Font = Enum.Font.GothamBold
+loadingLabel.TextScaled = true
+
+TweenService:Create(loadBar, TweenInfo.new(2), {Size=UDim2.new(1,0,1,0)}):Play()
+task.wait(2)
+loadGui:Destroy()
+
+-- ===== VIP GUI =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LlyXCode_VIP_UI"
+SafeParent(screenGui)
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,470,0,240)
+frame.Position = UDim2.new(0.5,-235,0.5,-120)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.1
+frame.Parent = screenGui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,25)
+
+-- Welcome
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(0,450,0,30)
+title.Position = UDim2.new(0,10,0,10)
+title.Text = "✨ Welcome back, "..player.Name.."!"
+title.TextColor3 = Color3.fromRGB(255,190,220)
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.BackgroundTransparency = 1
+
+-- Trial countdown
+local countdownLabel = Instance.new("TextLabel", frame)
+countdownLabel.Size = UDim2.new(0,450,0,20)
+countdownLabel.Position = UDim2.new(0,10,0,45)
+countdownLabel.TextColor3 = Color3.fromRGB(255,120,180)
+countdownLabel.Font = Enum.Font.Gotham
+countdownLabel.BackgroundTransparency = 1
+countdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+if vipType == "TRIAL" then
+    task.spawn(function()
+        while task.wait(1) do
+            local remaining = expireTime - os.time()
+            if remaining <= 0 then
+                player:Kick("❌ Trial expired. Upgrade to VIP Permanent.")
+                return
+            end
+            local h = math.floor(remaining/3600)
+            local m = math.floor((remaining%3600)/60)
+            local s = remaining%60
+            countdownLabel.Text = string.format("⏳ Trial expire: %02d:%02d:%02d", h,m,s)
+        end
+    end)
+else
+    countdownLabel.Text = ""
+end
+
+-- ===== Script Selector =====
+local function showScriptSelector()
+    local selectFrame = Instance.new("Frame", screenGui)
+    selectFrame.Size = UDim2.new(0,280,0,200)
+    selectFrame.Position = UDim2.new(0.5,-140,0.5,-100)
+    selectFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    selectFrame.BackgroundTransparency = 0.05
+    Instance.new("UICorner", selectFrame).CornerRadius = UDim.new(0,15)
+
+    local function makeButton(text,y,link)
+        local btn = Instance.new("TextButton", selectFrame)
+        btn.Size = UDim2.new(0.8,0,0,36)
+        btn.Position = UDim2.new(0.1,0,y*selectFrame.Size.Y.Scale,0)
+        btn.Text = text
+        btn.Font = Enum.Font.GothamBold
+        btn.TextScaled = true
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.BackgroundColor3 = Color3.fromRGB(255,110,180)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+        btn.MouseButton1Click:Connect(function()
+            selectFrame:Destroy()
+            screenGui:Destroy()
+            pcall(function() loadstring(game:HttpGet(link))() end)
+        end)
+    end
+
+    -- Semua VIP bisa pilih ketiga script
+    makeButton("🌸 Trial Script (3 Hari)", 0.1, TRIAL_LINK)
+    makeButton("🌸 Permanent Script", 0.4, PERMA_LINK)
+    makeButton("🌸 Full Pack Script", 0.7, FULLPACK_LINK)
+end
+
+task.spawn(function() task.wait(0.5); showScriptSelector() end)
