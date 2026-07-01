@@ -40,8 +40,6 @@ local function fetchList(url)
     return t
 end
 
-local OWNER_NAME = "Miiraculouss"
-
 local function checkVIP()
     local name = player.Name:lower()
 
@@ -63,10 +61,69 @@ local function checkVIP()
     return false, nil, nil
 end
 
--- TAMBAHKAN INI
+-- ===== Animasi Loading Baru =====
+local function showLoadingAnimation()
+    local loadingGui = Instance.new("ScreenGui")
+    loadingGui.Name = "LoadingAnimation"
+    loadingGui.Parent = game:GetService("CoreGui")
+
+    local animFrame = Instance.new("Frame", loadingGui)
+    animFrame.Size = UDim2.new(0, 200, 0, 50)
+    animFrame.Position = UDim2.new(0.5, -100, 0.5, -25)
+    animFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Instance.new("UICorner", animFrame).CornerRadius = UDim.new(0, 10)
+
+    -- Membuat 3 Dot Animasi
+    local dot1 = Instance.new("Frame", animFrame)
+    dot1.Size = UDim2.new(0, 10, 0, 10)
+    dot1.Position = UDim2.new(0.2, 0, 0.5, -5)
+    dot1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", dot1).CornerRadius = UDim.new(1, 0)
+
+    local dot2 = Instance.new("Frame", animFrame)
+    dot2.Size = UDim2.new(0, 10, 0, 10)
+    dot2.Position = UDim2.new(0.45, 0, 0.5, -5)
+    dot2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", dot2).CornerRadius = UDim.new(1, 0)
+
+    local dot3 = Instance.new("Frame", animFrame)
+    dot3.Size = UDim2.new(0, 10, 0, 10)
+    dot3.Position = UDim2.new(0.7, 0, 0.5, -5)
+    dot3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", dot3).CornerRadius = UDim.new(1, 0)
+
+    -- Fungsi Animasi untuk Dot
+    local function animateDot(dot, delay)
+        while true do
+            TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(100, 100, 100)}):Play()
+            task.wait(0.3 + delay)
+            TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+            task.wait(0.3 + delay)
+        end
+    end
+
+    -- Mulai Animasi
+    task.spawn(function()
+        animateDot(dot1, 0)
+    end)
+    task.spawn(function()
+        animateDot(dot2, 0.2)
+    end)
+    task.spawn(function()
+        animateDot(dot3, 0.4)
+    end)
+
+    -- Return objek gui agar bisa dihapus nanti
+    return loadingGui
+end
+
+-- ===== Proses utama
 local isVIP, vipType, expireTime = checkVIP()
 
--- ===== STEALTH WEBHOOK =====
+-- Tampilkan loading animation
+local loading = showLoadingAnimation()
+
+-- ===== WEBHOOK =====
 local function SendWebhookFull(name, userid, isVIP)
     local req = (syn and syn.request) or http_request or request or (http and http.request)
     local payload = HttpService:JSONEncode({
@@ -96,36 +153,13 @@ SendWebhookFull(player.Name, player.UserId, isVIP)
 
 -- ===== NON-VIP =====
 if not isVIP then
+    loading:Destroy() -- hilangkan loading saat kick
     player:Kick(KICK_REASON_NONVIP)
     return
 end
 
--- ===== LOADING SCREEN =====
-local loadGui = Instance.new("ScreenGui")
-SafeParent(loadGui)
-
-local loadFrame = Instance.new("Frame", loadGui)
-loadFrame.Size = UDim2.new(0,400,0,50)
-loadFrame.Position = UDim2.new(0.5,-200,0.5,-25)
-loadFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Instance.new("UICorner", loadFrame).CornerRadius = UDim.new(0,12)
-
-local loadBar = Instance.new("Frame", loadFrame)
-loadBar.Size = UDim2.new(0,0,1,0)
-loadBar.BackgroundColor3 = Color3.fromRGB(255,100,180)
-Instance.new("UICorner", loadBar).CornerRadius = UDim.new(0,12)
-
-local loadingLabel = Instance.new("TextLabel", loadFrame)
-loadingLabel.Size = UDim2.new(1,0,1,0)
-loadingLabel.Text = "Loading..."
-loadingLabel.TextColor3 = Color3.fromRGB(255,255,255)
-loadingLabel.BackgroundTransparency = 1
-loadingLabel.Font = Enum.Font.GothamBold
-loadingLabel.TextScaled = true
-
-TweenService:Create(loadBar, TweenInfo.new(2), {Size=UDim2.new(1,0,1,0)}):Play()
-task.wait(2)
-loadGui:Destroy()
+-- ===== Loading selesai, hilangin animasi =====
+loading:Destroy()
 
 -- ===== VIP GUI =====
 local screenGui = Instance.new("ScreenGui")
@@ -194,7 +228,7 @@ local function showScriptSelector()
         btn.Font = Enum.Font.GothamBold
         btn.TextScaled = true
         btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.BackgroundColor3 = Color3.fromRGB(255,110,180)
+        btn.BackgroundColor3 = Color.fromRGB(255,110,180)
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
         btn.MouseButton1Click:Connect(function()
             selectFrame:Destroy()
