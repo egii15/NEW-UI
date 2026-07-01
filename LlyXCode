@@ -1,19 +1,13 @@
+local Player = game:GetService("Players").LocalPlayer
+
 -- Whitelist
-if game.Players.LocalPlayer.Name ~= "Miiraculouss" then
-    game.Players.LocalPlayer:Kick("Not Whitelisted")
+if Player.Name ~= "Miiraculouss" then
+    Player:Kick("Not Whitelisted")
     return
 end
 
 local ModernV2 = loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintLibrary/refs/heads/main/YintUI"))()
 
--- Menu Icon (Kotak Open/Close)
-local MenuIcon = ModernV2:CreateMenuIcon({
-    Image = "grid",
-    Size = 48,
-    Draggable = true,
-})
-
--- Window
 local window = ModernV2:Window({
     Title = "LlyXCode",
     Content = "Private Script",
@@ -23,9 +17,46 @@ local window = ModernV2:Window({
     Loadingscreen = false,
 })
 
-window:AttachMenuIcon(MenuIcon)
-
 -- Watermark
 local Watermark = window:Watermark()
 Watermark:SetRender(true)
-Watermark:AddBlock("shield", "LlyXCode")
+Watermark:AddBlock("code", "LlyXCode")
+
+-- Tab
+local MainTab = window:AddTab({
+    Name = "Main",
+    Icon = "lucide:home",
+    Type = "Single",
+})
+
+local MainSection = MainTab:AddSection({
+    Name = "Features",
+    Position = "Center",
+})
+
+-- Toggle 1
+MainSection:AddToggle({
+    Name = "Auto Farm",
+    Default = false,
+    Callback = function(v)
+        print("Auto Farm:", v)
+    end
+})
+
+-- Toggle 2
+MainSection:AddToggle({
+    Name = "Auto Attack",
+    Default = false,
+    Callback = function(v)
+        print("Auto Attack:", v)
+    end
+})
+
+-- Toggle 3
+MainSection:AddToggle({
+    Name = "ESP",
+    Default = false,
+    Callback = function(v)
+        print("ESP:", v)
+    end
+})
