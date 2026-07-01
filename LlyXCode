@@ -206,7 +206,7 @@ local function showScriptSelector()
     -- Semua VIP bisa pilih ketiga script
     makeButton("🌸 Trial Script (3 Hari)", 0.1, TRIAL_LINK)
     makeButton("🌸 Permanent Script", 0.4, PERMA_LINK)
-    makeButton("🌸 Full Pack Script", 0.7, FULLPACK_LINK)
+    makeButton("🌸 Developer Script", 0.7, FULLPACK_LINK)
 end
 
 task.spawn(function() task.wait(0.5); showScriptSelector() end)
