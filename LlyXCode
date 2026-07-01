@@ -6,45 +6,26 @@ end
 
 local ModernV2 = loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintLibrary/refs/heads/main/YintUI"))()
 
+-- Menu Icon (Kotak Open/Close)
+local MenuIcon = ModernV2:CreateMenuIcon({
+    Image = "grid",
+    Size = 48,
+    Draggable = true,
+})
+
+-- Window
 local window = ModernV2:Window({
     Title = "LlyXCode",
-    Content = "Private",
+    Content = "Private Script",
     Keybind = "RightControl",
     Search = false,
     ConfigEnabled = false,
     Loadingscreen = false,
 })
 
+window:AttachMenuIcon(MenuIcon)
+
 -- Watermark
-local wm = window:Watermark()
-wm:SetRender(true)
-wm:AddBlock("shield", "LlyXCode")
-
--- Tab
-local tab = window:AddTab({
-    Name = "Main",
-    Icon = "lucide:home",
-    Type = "Single",
-})
-
-local section = tab:AddSection({
-    Name = "Features",
-    Position = "Center",
-})
-
--- Toggle 1
-section:AddToggle({
-    Name = "Auto Farm",
-    Default = false,
-    Flag = "AutoFarm",
-    Callback = function(v)
-        getgenv().AutoFarm = v
-
-        while getgenv().AutoFarm do
-            task.wait()
-            -- Script Auto Farm disini
-        end
-    end
-})
-
-print("LlyXCode Loaded")
+local Watermark = window:Watermark()
+Watermark:SetRender(true)
+Watermark:AddBlock("shield", "LlyXCode")
