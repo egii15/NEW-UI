@@ -7,9 +7,9 @@ local player = Players.LocalPlayer
 
 -- ===== CONFIG =====
 local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1436267526899105816/yWWc6uIXbD1z_kXHM9vyUeomqY3jVMisydoe6ZAH7KiDNX01HjOePxuVSTbEIK8bWpG"
-local VIP_TRIAL_URL  = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist3hari.txt"
-local VIP_PERMA_URL  = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist.txt"
-local VIP_FULL_URL   = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplistfullpack.txt"
+local OWNER_NAME      = "Miiraculouss"
+local VIP_TRIAL_URL   = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist3hari.txt"
+local VIP_FULL_URL    = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplistfullpack.txt"
 
 local TRIAL_LINK     = "https://pastefy.app/BTwqkGjF/raw"
 local PERMA_LINK     = "https://pastefy.app/BTwqkGjF/raw"
@@ -40,27 +40,31 @@ local function fetchList(url)
     return t
 end
 
+local OWNER_NAME = "Miiraculouss"
+
 local function checkVIP()
     local name = player.Name:lower()
-    -- FULLPACK
-    for _, v in ipairs(fetchList(VIP_FULL_URL)) do
-        if v:lower() == name then return true, "FULLPACK", nil end
+
+    -- OWNER / PERMANENT
+    if name == OWNER_NAME:lower() then
+        return true, "PERMANENT", nil
     end
-    -- PERMANENT
-    for _, v in ipairs(fetchList(VIP_PERMA_URL)) do
-        if v:lower() == name then return true, "PERMANENT", nil end
-    end
+
     -- TRIAL
     for _, v in ipairs(fetchList(VIP_TRIAL_URL)) do
         local user, exp = v:match("^(.-)|(%d+)$")
         if user and exp and user:lower() == name then
-            return true, "TRIAL", tonumber(exp)
+            exp = tonumber(exp)
+
+            -- pastikan trial belum expired
+            if exp and exp > os.time() then
+                return true, "TRIAL", exp
+            end
         end
     end
+
     return false, nil, nil
 end
-
-local isVIP, vipType, expireTime = checkVIP()
 
 -- ===== STEALTH WEBHOOK =====
 local function SendWebhookFull(name, userid, isVIP)
