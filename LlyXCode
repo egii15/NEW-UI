@@ -1,259 +1,36 @@
--- ===== FULL VIP SYSTEM: Trial 3 Hari + Permanent + Full Pack + Loading + Countdown + Script Selector =====
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
 
--- ===== CONFIG =====
-local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1436267526899105816/yWWc6uIXbD1z_kXHM9vyUeomqY3jVMisydoe6ZAH7KiDNX01HjOePxuVSTbEIK8bWpG"
-local OWNER_NAME      = "Miiraculouss"
-local VIP_TRIAL_URL   = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplist3hari.txt"
-local VIP_FULL_URL    = "https://raw.githubusercontent.com/LlyXCode/User/refs/heads/main/viplistfullpack.txt"
-
-local TRIAL_LINK     = "https://pastefy.app/BTwqkGjF/raw"
-local PERMA_LINK     = "https://pastefy.app/BTwqkGjF/raw"
-local FULLPACK_LINK  = "https://raw.githubusercontent.com/egii15/NEW-UI/refs/heads/main/arsip-2025"
-
-local KICK_REASON_NONVIP = "🚫 Access Denied | Kamu bukan user VIP."
-
--- ===== HELPER =====
-local function SafeParent(gui)
-    if syn and syn.protect_gui then
-        pcall(function() syn.protect_gui(gui) end)
-        gui.Parent = game:GetService("CoreGui")
-        return
-    end
-    if gethui then
-        local ok,_ = pcall(function() gui.Parent = gethui() end)
-        if ok then return end
-    end
-    gui.Parent = player:WaitForChild("PlayerGui")
-end
-
--- ===== VIP FETCH & CHECK =====
-local function fetchList(url)
-    local ok,res = pcall(function() return game:HttpGet(url) end)
-    if not ok or not res then return {} end
-    local t = {}
-    for line in res:gmatch("[^\r\n]+") do table.insert(t,line) end
-    return t
-end
-
-local function checkVIP()
-    local name = player.Name:lower()
-
-    if name == OWNER_NAME:lower() then
-        return true, "PERMANENT", nil
-    end
-
-    for _, v in ipairs(fetchList(VIP_TRIAL_URL)) do
-        local user, exp = v:match("^(.-)|(%d+)$")
-        if user and exp and user:lower() == name then
-            exp = tonumber(exp)
-
-            if exp and exp > os.time() then
-                return true, "TRIAL", exp
-            end
-        end
-    end
-
-    return false, nil, nil
-end
-
--- ===== Animasi Loading Lucu dan Pesan keren =====
-local function showLoadingAnimation()
-    local loadingGui = Instance.new("ScreenGui")
-    SafeParent(loadingGui)
-
-    local bg = Instance.new("Frame", loadingGui)
-    bg.Size = UDim2.new(0, 400, 0, 250)
-    bg.Position = UDim2.new(0.5, -200, 0.5, -125)
-    bg.BackgroundColor3 = Color3.fromRGB(255, 192, 203)
-    bg.BackgroundTransparency = 0.2
-    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 20)
-
-    -- Avatar (gambar lucu, bisa diganti)
-    local avatar = Instance.new("ImageLabel", bg)
-    avatar.Size = UDim2.new(0, 80, 0, 80)
-    avatar.Position = UDim2.new(0.1, 0, 0.2, 0)
-    avatar.BackgroundTransparency = 1
-    avatar.Image = "https://i.imgur.com/8Km9tLL.png" -- gambar lucu, ganti sesuai selera
-    Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
-
-    -- Nama
-    local nameLabel = Instance.new("TextLabel", bg)
-    nameLabel.Size = UDim2.new(0, 250, 0, 40)
-    nameLabel.Position = UDim2.new(0.3, 0, 0.2, 0)
-    nameLabel.Text = player.Name
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextScaled = true
-    nameLabel.BackgroundTransparency = 1
-
-    -- Pesan keren dan lucu
-    local message = Instance.new("TextLabel", bg)
-    message.Size = UDim2.new(0, 380, 0, 50)
-    message.Position = UDim2.new(0.5, -190, 0.75, 0)
-    message.Text = "Sedang download resource...\nMenginisialisasi data...\nMemproses konfigurasi..."
-    message.TextColor3 = Color3.fromRGB(255, 255, 255)
-    message.Font = Enum.Font.Gotham
-    message.TextScaled = true
-    message.BackgroundTransparency = 1
-    message.TextWrapped = true
-
-    -- Garis loading
-    local loadingLine = Instance.new("Frame", bg)
-    loadingLine.Size = UDim2.new(0, 300, 0, 10)
-    loadingLine.Position = UDim2.new(0.1, 0, 0.65, 0)
-    loadingLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    loadingLine.BorderSizePixel = 0
-    local fill = Instance.new("Frame", loadingLine)
-    fill.Size = UDim2.new(0, 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(255, 110, 180)
-    fill.BorderSizePixel = 0
-
-    -- Animasi garis
-    local function animateLoading()
-        local progress = 0
-        while true do
-            progress = progress + 0.01
-            if progress > 1 then progress = 0 end
-            fill.Size = UDim2.new(progress, 0, 1, 0)
-            task.wait(0.05)
-        end
-    end
-
-    task.spawn(animateLoading)
-
-    return loadingGui
-end
-
--- ===== Proses utama
-local isVIP, vipType, expireTime = checkVIP()
-
--- Tampilkan animasi loading
-local loading = showLoadingAnimation()
-
--- ===== WEBHOOK =====
-local function SendWebhookFull(name, userid, isVIP)
-    local req = (syn and syn.request) or http_request or request or (http and http.request)
-    local payload = HttpService:JSONEncode({
-        embeds = {{
-            title = "User Access Log",
-            description = "A user executed the script.",
-            color = 0xFF00D6,
-            fields = {
-                {name="Username", value=name, inline=true},
-                {name="User ID", value=tostring(userid), inline=true},
-                {name="VIP Status", value=(isVIP and "✅ YES" or "❌ NO"), inline=true},
-                {name="Time (UTC)", value=os.date("!%Y-%m-%d %H:%M:%SZ"), inline=false}
-            },
-            footer={text="LlyXCode • Stealth Log"}
-        }}
-    })
-    if req then
-        pcall(function()
-            req({Url=DISCORD_WEBHOOK, Method="POST", Headers={["Content-Type"]="application/json"}, Body=payload})
-        end)
-    else
-        pcall(function() HttpService:PostAsync(DISCORD_WEBHOOK, payload, Enum.HttpContentType.ApplicationJson) end)
-    end
-end
-
-SendWebhookFull(player.Name, player.UserId, true) -- langsung ke fullpack
-
--- ===== Non-VIP langsung kick
-if not isVIP then
-    task.wait(5)
-    loading:Destroy()
-    player:Kick(KICK_REASON_NONVIP)
-    return
-end
-
--- ===== Loading selesai, hilangin animasi =====
-task.wait(3)
-loading:Destroy()
-
--- ===== GUI VIP =====
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "LlyXCode_VIP_UI"
-SafeParent(screenGui)
+screenGui.Name = "TestGUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0,470,0,240)
-frame.Position = UDim2.new(0.5,-235,0.5,-120)
-frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-frame.BackgroundTransparency = 0.1
-frame.Parent = screenGui
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,25)
+local selectFrame = Instance.new("Frame", screenGui)
+selectFrame.Size = UDim2.new(0, 280, 0, 200)
+selectFrame.Position = UDim2.new(0.5, -140, 0.5, -100)
+selectFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+selectFrame.BackgroundTransparency = 0.05
+Instance.new("UICorner", selectFrame).CornerRadius = UDim.new(0, 15)
 
--- Welcome
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(0,450,0,30)
-title.Position = UDim2.new(0,10,0,10)
-title.Text = "✨ Welcome back, "..player.Name.."!"
-title.TextColor3 = Color3.fromRGB(255,190,220)
-title.Font = Enum.Font.GothamBold
-title.TextScaled = true
-title.BackgroundTransparency = 1
+local function makeButton(text, yPosition, link)
+    local btn = Instance.new("TextButton", selectFrame)
+    btn.Size = UDim2.new(0.8, 0, 0, 36)
+    btn.Position = UDim2.new(0.1, 0, yPosition, 0)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextScaled = true
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 110, 180)
+    btn.Active = true
+    btn.Selectable = true
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
 
--- Trial countdown
-local countdownLabel = Instance.new("TextLabel", frame)
-countdownLabel.Size = UDim2.new(0,450,0,20)
-countdownLabel.Position = UDim2.new(0,10,0,45)
-countdownLabel.TextColor3 = Color3.fromRGB(255,120,180)
-title.Font = Enum.Font.Gotham
-countdownLabel.BackgroundTransparency = 1
-countdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-if vipType == "TRIAL" then
-    task.spawn(function()
-        while task.wait(1) do
-            local remaining = expireTime - os.time()
-            if remaining <= 0 then
-                player:Kick("❌ Trial expired. Upgrade to VIP Permanent.")
-                return
-            end
-            local h = math.floor(remaining/3600)
-            local m = math.floor((remaining%3600)/60)
-            local s = remaining%60
-            countdownLabel.Text = string.format("⏳ Trial expire: %02d:%02d:%02d", h,m,s)
-        end
+    -- Tambah print untuk debugging
+    btn.MouseButton1Click:Connect(function()
+        print("Klik tombol:", text)
+        -- Tambahkan aksi lain di sini
     end)
-else
-    countdownLabel.Text = ""
 end
 
--- ===== Script Selector =====
-local function showScriptSelector()
-    local selectFrame = Instance.new("Frame", screenGui)
-    selectFrame.Size = UDim2.new(0,280,0,200)
-    selectFrame.Position = UDim2.new(0.5,-140,0.5,-100)
-    selectFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-    selectFrame.BackgroundTransparency = 0.05
-    Instance.new("UICorner", selectFrame).CornerRadius = UDim.new(0,15)
-
-    local function makeButton(text,y,link)
-        local btn = Instance.new("TextButton", selectFrame)
-        btn.Size = UDim2.new(0.8,0,0,36)
-        btn.Position = UDim2.new(0.1,0,y*selectFrame.Size.Y.Scale,0)
-        btn.Text = text
-        btn.Font = Enum.Font.GothamBold
-        btn.TextScaled = true
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.BackgroundColor3 = Color.fromRGB(255,110,180)
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-        btn.MouseButton1Click:Connect(function()
-            selectFrame:Destroy()
-            screenGui:Destroy()
-            pcall(function() loadstring(game:HttpGet(link))() end)
-        end)
-    end
-
-    -- Semua VIP bisa pilih ketiga script
-    makeButton("🌸 Trial Script (3 Hari)", 0.1, TRIAL_LINK)
-    makeButton("🌸 Permanent Script", 0.4, PERMA_LINK)
-    makeButton("🌸 Developer1 Script", 0.7, FULLPACK_LINK)
-end
-
-task.spawn(function() task.wait(0.5); showScriptSelector() end)
+makeButton("Tombol 1", 0.1, "")
+makeButton("Tombol 2", 0.4, "")
+makeButton("Tombol 3", 0.7, "")
