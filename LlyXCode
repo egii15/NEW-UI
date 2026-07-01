@@ -26,8 +26,8 @@ local MenuIcon = ModernV2:CreateMenuIcon({
 
 -- Create the main window.
 local window = ModernV2:Window({
-	Title = "ModernV2",
-	Content = "New Ui",
+	Title = "JEMBUTT",
+	Content = "Gijylll",
 	Image = "120358385035996",
 	Color = Color3.fromRGB(78, 127, 252),
 	Uitransparent = 0.12,
