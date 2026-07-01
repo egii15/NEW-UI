@@ -1,1560 +1,889 @@
-if not game:IsLoaded() then game.Loaded:Wait() end
-local Players=game:GetService("Players")
-while not Players.LocalPlayer do task.wait() end
-while not workspace.CurrentCamera do task.wait() end
-local cloneref=(cloneref or clonereference or function(v)return v end)
-local RunService=cloneref(game:GetService("RunService"))
-local UserInputService=cloneref(game:GetService("UserInputService"))
-local Lighting=cloneref(game:GetService("Lighting"))
-local Stats=cloneref(game:GetService("Stats"))
-local VirtualInputManager=cloneref(game:GetService("VirtualInputManager"))
-local CoreGui=cloneref(game:GetService("CoreGui"))
-local GuiService=cloneref(game:GetService("GuiService"))
-local ReplicatedStorage=cloneref(game:GetService("ReplicatedStorage"))
-local PathfindingService=cloneref(game:GetService("PathfindingService"))
-local ProximityPromptService=cloneref(game:GetService("ProximityPromptService"))
-local HttpService=cloneref(game:GetService("HttpService"))
-local LocalPlayer=Players.LocalPlayer
-local PlayerGui=LocalPlayer:WaitForChild("PlayerGui")
+-- LocalScript (StarterPlayerScripts)
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
 
--- =========================================================
--- UI PARENT
--- =========================================================
+local dashDistance = 5
+local dashSpeed = 0.2
+local steps = 10
+local guiName = "DashGUI"
 
-local function GetUIParent()
-    local ok,res=pcall(function()
-        if gethui then
-            return gethui()
-        end
-        if syn and syn.protect_gui then
-            local gui=Instance.new("ScreenGui")
-            syn.protect_gui(gui)
-            gui.Parent=CoreGui
-            return gui
-        end
-        return CoreGui
-    end)
-    return ok and res or CoreGui
-end
-local TargetGui=GetUIParent()
+-- Fungsi dash smooth
+local function dashSmooth(hrp)
+    if not hrp then return end
+    local forwardVector = hrp.CFrame.LookVector
+    local startPos = hrp.Position
+    local endPos = startPos + forwardVector * dashDistance
 
--- =========================================================
--- SAFE HTTPGET
--- =========================================================
-
-local function SafeHttpGet(url)
-    local ok,res=pcall(function()
-        if game.HttpGet then
-            return game:HttpGet(url)
-        end
-        if syn and syn.request then
-            return syn.request({
-                Url=url,
-                Method="GET"
-            }).Body
-        end
-        if http_request then
-            return http_request({
-                Url=url,
-                Method="GET"
-            }).Body
-        end
-        error("HttpGet unsupported")
-    end)
-    return ok and res or nil
-end
-
--- =========================================================
--- LOAD WINDUI
--- =========================================================
-
-local WindUI
-do
-    local src=SafeHttpGet(
-        "https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"
-    )
-    if src then
-        local ok,res=pcall(function()
-            return loadstring(src)()
-        end)
-        if ok then
-            WindUI=res
-        end
+    for i = 1, steps do
+        local alpha = i / steps
+        local pos = startPos:Lerp(endPos, alpha)
+        hrp.CFrame = CFrame.new(pos, pos + forwardVector)
+        task.wait(dashSpeed / steps)
     end
 end
 
-if WindUI then
-    print("[FORKT] WindUI Loaded")
-else
-    warn("[FORKT] Failed Load WindUI")
-    pcall(function()
-        game:GetService("StarterGui"):SetCore(
-            "SendNotification",
-            {
-                Title="FORKT",
-                Text="Failed loading WindUI"
-            }
+-- Fungsi buat GUI
+local function createDashGUI()
+    -- Cek kalau udah ada, hapus dulu
+    local existing = player:FindFirstChild("PlayerGui"):FindFirstChild(guiName)
+    if existing then
+        existing:Destroy()
+    end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = guiName
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local dashButton = Instance.new("TextButton")
+    dashButton.Size = UDim2.new(0, 100, 0, 50)
+    dashButton.Position = UDim2.new(0.5, -50, 0.9, 0)
+    dashButton.Text = "Dash"
+    dashButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    dashButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    dashButton.Parent = screenGui
+
+    -- Drag logic
+    local dragging, dragInput, dragStart, startPosButton
+    local function update(input)
+        local delta = input.Position - dragStart
+        dashButton.Position = UDim2.new(
+            startPosButton.X.Scale, startPosButton.X.Offset + delta.X,
+            startPosButton.Y.Scale, startPosButton.Y.Offset + delta.Y
         )
-    end)
-    return
-end
-
--- =========================================================
--- LOAD JUNKIE
--- =========================================================
-
-local Junkie
-do
-    local src=SafeHttpGet(
-        "https://jnkie.com/sdk/library.lua"
-    )
-    if src then
-        local ok,res=pcall(function()
-            return loadstring(src)()
-        end)
-        if ok then
-            Junkie=res
-        end
-    end
-end
-
-if Junkie then
-
-    Junkie.service="FORKT"
-    Junkie.identifier="1041888"
-    Junkie.provider="Mixed"
-    print("[FORKT] Junkie Loaded")
-
-else
-    warn("[FORKT] Failed Load Junkie")
-    pcall(function()
-        game:GetService("StarterGui"):SetCore(
-            "SendNotification",
-            {
-                Title="FORKT",
-                Text="Junkie API failed"
-            }
-        )
-    end)
-end
-
--- =========================================================
--- ANTI MEMORY LEAK
--- =========================================================
-
-getgenv().FORKT_CONNECTIONS=
-    getgenv().FORKT_CONNECTIONS or {}
-for _,conn in ipairs(getgenv().FORKT_CONNECTIONS) do
-    pcall(function()
-        RunService:UnbindFromRenderStep(
-            "SmoothFOV"
-        )
-        if conn and conn.Disconnect then
-            conn:Disconnect()
-        end
-    end)
-end
-
-table.clear(getgenv().FORKT_CONNECTIONS)
-----------------------------------------------------------------
--- ESP COLORS (Pengganti Config Manual)
-----------------------------------------------------------------
-local ESP_COLORS = {
-    Killer = Color3.fromRGB(255, 93, 108), 
-    Survivor = Color3.fromRGB(0, 255, 34),
-    Generator = Color3.fromRGB(200, 100, 0), 
-    Gate = Color3.fromRGB(255, 255, 255),
-    Pallet = Color3.fromRGB(53, 189, 166), 
-    Hook = Color3.fromRGB(252, 116, 116)
-}
-local MaskNames = {
-    ["Abysswalker"] = "ABYSSWALKER",
-    ["Cure"]        = "CURE",
-    ["Hidden"]      = "HIDDEN",
-    ["Killer"]      = "THE KILLER",
-    ["Masked"]      = "PALA AYAM",
-    ["Stalker"]     = "STALKER",
-    ["Veil"]        = "VEIL",
-    ["Slasher"]     = "SLASHER",
-}
-
-local MaskColors = {
-    ["Abysswalker"] = Color3.fromRGB(110, 20, 255), -- Void Purple
-    ["Cure"]        = Color3.fromRGB(0, 54, 156), -- blue
-    ["Hidden"]      = Color3.fromRGB(170, 170, 170), -- Pale Grey
-    ["Killer"]      = Color3.fromRGB(255, 40, 40), -- Blood Red
-    ["Masked"]      = Color3.fromRGB(255, 90, 20), -- Deep Orange
-    ["Stalker"]     = Color3.fromRGB(255, 0, 140), -- Neon Pink
-    ["Veil"]        = Color3.fromRGB(0, 140, 255), -- Electric Blue
-    ["Slasher"]     = Color3.fromRGB(180, 0, 255), -- Dark Magenta
-}
-local CachedMapObjects = {
-    Generators = {},
-    Pallets = {},
-    Hooks = {},
-    Gates = {}
-}
-local SpoofData = {
-    Gears = 0,
-    Screws = 0,
-    Level = 0
-}
-local PrevESPState = { Generator = false, Hook = false, Pallet = false, Gate = false }
--- =========================================================
--- [NATIVE CACHE] MEMPERCEPAT KECEPATAN EKSEKUSI HINGGA 30%
--- =========================================================
-local v3 = Vector3.new
-local v2 = Vector2.new
-local cnew = CFrame.new
-local cangles = CFrame.Angles
-local t_insert = table.insert
-local t_remove = table.remove
-local m_floor = math.floor
-local m_round = math.round
-local s_format = string.format
-
-local function UpdateMapCache()
-    local map = workspace:FindFirstChild("Map")
-    if not map then return end
-    
-    CachedMapObjects.Generators = {}
-    CachedMapObjects.Pallets = {}
-    CachedMapObjects.Hooks = {}
-    CachedMapObjects.Gates = {}
-    
-    local descendants = map:GetDescendants()
-    for i = 1, #descendants do
-        local obj = descendants[i]
-        
-        -- [GAYA BARU DARI TEMPLATE] Deteksi Nama Instan & Ketat (Sangat Hemat CPU)
-        local n = obj.Name
-        if n == "Generator" then 
-            t_insert(CachedMapObjects.Generators, obj)
-        elseif n == "Hook" then  
-            t_insert(CachedMapObjects.Hooks, obj)
-        elseif n == "Gate" then 
-            t_insert(CachedMapObjects.Gates, obj)
-        elseif n == "Pallet" or n == "Palletwrong" then 
-            t_insert(CachedMapObjects.Pallets, obj)
-        end
-        
-        if i % 500 == 0 then task.wait() end 
     end
 
-    if PrevESPState then
-        PrevESPState.Generator = false
-        PrevESPState.Hook = false
-        PrevESPState.Pallet = false
-        PrevESPState.Gate = false
-    end
-end
+    dashButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosButton = dashButton.Position
 
--- =========================================================
--- [OPTIMASI] LITE MAP DETECTOR (STREAMING-ENABLED FIX)
--- =========================================================
-task.spawn(function() 
-    local mapWasEmpty = true 
-    local descendantConn = nil 
-    
-    while task.wait(2) do 
-        if not getgenv().FORKT_RUNNING then 
-            if descendantConn then descendantConn:Disconnect() end
-            break 
-        end
-        
-        local currentMap = workspace:FindFirstChild("Map")
-        local hasContents = currentMap and #currentMap:GetChildren() > 0
-        
-        if hasContents and mapWasEmpty then
-            mapWasEmpty = false 
-            
-            task.delay(8, function()
-                if currentMap and #currentMap:GetChildren() > 0 then
-                    cachedChar = nil; cachedRoot = nil
-                    UpdateMapCache() 
-                    
-                    if descendantConn then descendantConn:Disconnect() end
-                    descendantConn = currentMap.DescendantAdded:Connect(function(obj)
-                        -- [GAYA BARU DARI TEMPLATE]
-                        local n = obj.Name
-                        if n == "Generator" then 
-                            t_insert(CachedMapObjects.Generators, obj)
-                        elseif n == "Hook" then 
-                            t_insert(CachedMapObjects.Hooks, obj)
-                        elseif n == "Gate" then 
-                            t_insert(CachedMapObjects.Gates, obj)
-                        elseif n == "Pallet" or n == "Palletwrong" then 
-                            t_insert(CachedMapObjects.Pallets, obj)
-                        end
-                    end)
-                    
-                    local palletCount = CachedMapObjects.Pallets and #CachedMapObjects.Pallets or 0
-                    local genCount = CachedMapObjects.Generators and #CachedMapObjects.Generators or 0
-                    
-                    WindUI:Notify({ 
-                        Title = "Map Loaded", 
-                        Content = "Menemukan " .. palletCount .. " Pallet & " .. genCount .. " Gen. Radar Aktif!", 
-                        Icon = "lucide:radar" 
-                    })
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
                 end
             end)
-            
-        elseif not hasContents and not mapWasEmpty then
-            mapWasEmpty = true 
-            
-            if descendantConn then 
-                descendantConn:Disconnect() 
-                descendantConn = nil 
-            end
-            
-            CachedMapObjects.Generators = {}
-            CachedMapObjects.Pallets = {}
-            CachedMapObjects.Hooks = {}
-            CachedMapObjects.Gates = {}
-            if ActiveGenerators then table.clear(ActiveGenerators) end
-            
-            if PrevESPState then
-                PrevESPState.Generator = false; PrevESPState.Hook = false
-                PrevESPState.Pallet = false; PrevESPState.Gate = false
-            end
         end
-    end 
-end)
+    end)
 
-getgenv().MoonwalkZigzagSpeed=11
-getgenv().MoonwalkBoostPower=1.08
-getgenv().AutoFarmSpeed=17
-getgenv().GeneratorPerfectOffsetStart=102
-getgenv().GeneratorPerfectOffsetEnd=109
-getgenv().ParryMatchup="Auto"
-getgenv().AimStrictness=1.3
-getgenv().ParryDelayOffset=0
-getgenv().FORKT_RUNNING=true
-getgenv().AimbotSmoothness=8
+    dashButton.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
 
-local MoonwalkEnabled=false
-local KEY_TOGGLE=Enum.KeyCode.R
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
 
-local AutoGenerator=false
-local AutoGeneratorMode="Perfect"
-
-local AutoParry=false
-local ParryDistance=10
-
-local ExactParryRemote
-local LastParryTick=0
-
-local CFG_AimPrediction=true
-local CFG_BurstAmount=8
-local CFG_ParryCooldown=0.45
-local CFG_MaxVelocity=32
-
-local GenConnection=nil
-
-local SpeedBoost=false
-local NoSlowdown=false
-local InstantHeal=false
-local AntiKnock=false
-local AntiBlind=false
-local AntiStun=false
-
-local Aimbot=false
-local WallCheck=true
-local ShowFOVCircle=false
-
-local CustomCameraFOV=false
-local CameraFOVValue=100
-
-local AimRadius=getgenv().AimRadius or 60
-local AimDistance=getgenv().AimDistance or 80
-local AimKey=Enum.KeyCode.Q
-
-local BoostSpeed=30
-local CachedTarget=nil
-local LastTargetCheck=0
-
-local cachedChar,cachedRoot,cachedHum=nil,nil,nil
-
-local AutoAttack=false
-local AttackRange=10
-local WarnKiller=true
-local ActiveGenerators={}
-local ThemeName="FORKT"
-local Refreshing=false
-local AutoUnhook=false
-local AutoWiggle=false
-local AutoFarmBot=false
-
-local SilentAimPistol=false
-
-local CachedTwistFire
-local CachedTwistVisual
-
-local DoubleDamageGen=false
-local SpearPrediction=false
-local AntiGravitySpear=false
-local MobileRotateBtn=nil
-
-local HitboxExpander=false
-local HitboxSize=15
-
-local AutoHealAura=false
-local HealAuraRadius=20
-
-local aimRayParams=RaycastParams.new()
-aimRayParams.FilterType=Enum.RaycastFilterType.Blacklist
-
-local SilentActions=false
-local AntiFallDamage=false
-local AntiLogger=true
-local NotifyStun=false
-
-local ESP_Survivor_Name=false
-local ESP_Survivor_Highlight=false
-local ESP_Killer_Name=false
-local ESP_Killer_Highlight=false
-local ESP_Generator=false
-local ESP_Gate=false
-local ESP_Pallet=false
-local ESP_Hook=false
-
-local ActiveESP={}
-local LastKillerWarnCheck=0
-local closestKillerDist=999
-local LastUpdateTick=0
-local LastESPRefresh=0
-
-local TouchID=8822
-local isTriggering=false
-local FOVCircle=nil
-
-local lastTouchCheck=0
-local cachedTouches={}
-
--- 1. SETUP FOV CIRCLE
-local IndicatorGui = TargetGui:FindFirstChild("FORKT_Indicator") or Instance.new("ScreenGui")
-IndicatorGui.Name = "FORKT_Indicator" 
-IndicatorGui.IgnoreGuiInset = true 
-IndicatorGui.ResetOnSpawn = false
-IndicatorGui.Parent = TargetGui
-
-if IndicatorGui:FindFirstChild("FOVCircle") then IndicatorGui.FOVCircle:Destroy() end
-FOVCircle = Instance.new("Frame", IndicatorGui)
-FOVCircle.Name = "FOVCircle"
-FOVCircle.Size = UDim2.new(0, AimRadius * 2, 0, AimRadius * 2)
-FOVCircle.AnchorPoint = v2(0.5, 0.5)
-FOVCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-FOVCircle.BackgroundTransparency = 1
-FOVCircle.Visible = ShowFOVCircle
-
-local corner = Instance.new("UICorner", FOVCircle) 
-corner.CornerRadius = UDim.new(1, 0)
-local stroke = Instance.new("UIStroke", FOVCircle) 
-stroke.Color = Color3.new(1, 1, 1)
-stroke.Transparency = 0.5
-stroke.Thickness = 1.5
-
-----------------------------------------------------------------
--- SCP / ZOMBIE ESP
--- ULTRA STABLE
-----------------------------------------------------------------
-
-ESP_SCP=ESP_SCP or false
-
-local SCPESPFolder=
-    CoreGui:FindFirstChild("SCP_ESP")
-    or Instance.new("Folder")
-
-SCPESPFolder.Name="SCP_ESP"
-SCPESPFolder.Parent=CoreGui
-
-local SCPESPCache={}
-local SCPConnections={}
-
-----------------------------------------------------------------
--- VALID SCP
-----------------------------------------------------------------
-
-local function IsSCP(obj)
-
-    if not obj
-    or not obj:IsA("Model") then
-        return false
-    end
-
-    local n=obj.Name:lower()
-
-    return
-        n=="scp"
-        or n:match("^scp%d*$")
-        or n:find("zombie")
-        or n:find("monster")
-        or n:find("creature")
+    return dashButton
 end
 
-----------------------------------------------------------------
--- REMOVE
-----------------------------------------------------------------
+-- Listener respawn karakter
+local function setupCharacter(char)
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local dashButton = createDashGUI()
+    dashButton.MouseButton1Click:Connect(function()
+        dashSmooth(hrp)
+    end)
 
-local function RemoveSCPESP(model)
+    -- Loop cek GUI hilang
+    task.spawn(function()
+        while char.Parent do
+            if not player:FindFirstChild("PlayerGui"):FindFirstChild(guiName) then
+                dashButton = createDashGUI()
+                dashButton.MouseButton1Click:Connect(function()
+                    dashSmooth(hrp)
+                end)
+            end
+            task.wait(1) -- cek tiap 1 detik
+        end
+    end)
+end
 
-    local esp=SCPESPCache[model]
+player.CharacterAdded:Connect(setupCharacter)
+if player.Character then
+    setupCharacter(player.Character)
+end
 
-    if esp then
-        pcall(function()
-            esp:Destroy()
+
+
+
+local map = workspace:WaitForChild("Map")
+
+-- Fungsi rename generator
+local function renameGenerators()
+	local count = 0
+	for _, obj in ipairs(map:GetChildren()) do
+		if obj:IsA("Model") and string.find(obj.Name, "Generator") then
+			count += 1
+			obj.Name = "Generator " .. count
+		end
+	end
+end
+
+-- Jalankan saat pertama kali
+renameGenerators()
+
+-- Kalau ada model Generator baru ditambahkan ke Map
+map.ChildAdded:Connect(function(child)
+	task.wait(0.5)
+	if child:IsA("Model") and string.find(child.Name, "Generator") then
+		renameGenerators()
+	end
+end)
+
+local map = workspace:WaitForChild("Map")
+
+-- Fungsi rename hook
+local function renameHooks()
+	local count = 0
+	for _, obj in ipairs(map:GetChildren()) do
+		if obj:IsA("Model") and string.find(obj.Name, "Hook") then
+			count += 1
+			obj.Name = "Hook " .. count
+		end
+	end
+end
+
+-- Jalankan saat pertama kali
+renameHooks()
+
+-- Kalau ada model Hook baru ditambahkan ke Map
+map.ChildAdded:Connect(function(child)
+	task.wait(0.5)
+	if child:IsA("Model") and string.find(child.Name, "Hook") then
+		renameHooks()
+	end
+end)
+
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
+
+-- Buat Window
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - Premium",
+    Icon = "rbxassetid://131269662643486",
+    Author = "Violence District Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(650, 510),
+
+    Theme = "Plant",
+    Transparent = true,
+    Acrylic = false,
+    HidePanelBackground = true,
+    HideSearchBar = false,
+    NewElements = true,
+    SideBarWidth = 200,
+
+    -- Profil user di pojok kanan atas
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Name = playerDisplayName,
+        UserName = "@" .. playerName,
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
+        end
+    }
+})
+
+Window:Tag({
+    Title = "v1.2.9",
+    Color = Color3.fromHex("#30ff6a")
+})
+
+
+Window:EditOpenButton({
+    Enabled = false
+})
+
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "house"  }),
+    Main = Window:Tab({ Title = "Main", Icon = "swords"  }),
+    Visual = Window:Tab({ Title = "Visual", Icon = "eye"  }),
+}
+
+Tabs.Home:Section({ Title = "Update", Icon = "logs" })
+
+Tabs.Home:Section({
+        Title = "Here's what's new:",
+        TextSize = 24,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
+
+Tabs.Home:Section({
+        Title = [[
+
+		]],
+        TextSize = 18,
+        TextTransparency = .35,
+        FontWeight = Enum.FontWeight.Medium,
+    })
+
+Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Nexa Hub",
+    Image = "https://i.imgur.com/vl0g8IK.png",
+    ImageSize = 42, -- default 30
+    Thumbnail = "https://i.imgur.com/3m8FV2y.jpeg",
+    ThumbnailSize = 120 -- Thumbnail height
+})
+
+Tabs.Home:Paragraph({
+    Title = "Discord - Nexa | COMMUNITY",
+    Desc = "Indonesia 🇮🇩",
+    Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
+    ImageSize = 40,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("discord.gg/ECxQFc97F5")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+Tabs.Main:Section({ Title = "Main" })
+
+-- ========= Speed Lock (WindUI Version) =========
+local speedCurrent, speedHumanoid = 16, nil
+local speedEnforced, speedPaused = false, false
+local speedStunUntil, speedSlowUntil = 0, 0
+local speedTickConn = nil
+local speedLastTick, speedTickInterval = 0, 0.12
+
+local function setWalkSpeed(h, v)
+    if h and h.Parent then
+        pcall(function() h.WalkSpeed = v end)
+    end
+end
+
+local function canEnforce()
+    local h = speedHumanoid
+    if not speedEnforced then return false end
+    if not h or not h.Parent then return false end
+    if speedPaused then return false end
+    if os.clock() < speedStunUntil or os.clock() < speedSlowUntil then return false end
+    if h.Health <= 0 then return false end
+    if h.PlatformStand or h.Sit then return false end
+    local st = h:GetState()
+    if st == Enum.HumanoidStateType.Ragdoll or st == Enum.HumanoidStateType.FallingDown or st == Enum.HumanoidStateType.Physics or st == Enum.HumanoidStateType.GettingUp or st == Enum.HumanoidStateType.Seated then return false end
+    local hrp = h.Parent:FindFirstChild("HumanoidRootPart")
+    if hrp and hrp.Anchored then return false end
+    return true
+end
+
+local function heartbeat()
+    if not speedHumanoid then return end
+    local t = os.clock()
+    if t - speedLastTick < speedTickInterval then return end
+    speedLastTick = t
+    if not canEnforce() then return end
+    if speedHumanoid.WalkSpeed ~= speedCurrent then
+        setWalkSpeed(speedHumanoid, speedCurrent)
+    end
+end
+
+local function disconnectAll()
+    if speedTickConn then
+        speedTickConn:Disconnect()
+        speedTickConn = nil
+    end
+end
+
+local function bindHumanoid(h)
+    speedHumanoid = h
+    if speedTickConn then speedTickConn:Disconnect() end
+    speedTickConn = game:GetService("RunService").Heartbeat:Connect(heartbeat)
+end
+
+-- Bind ke Humanoid saat script dijalankan
+local player = game.Players.LocalPlayer
+if player.Character then
+    bindHumanoid(player.Character:FindFirstChildOfClass("Humanoid"))
+end
+player.CharacterAdded:Connect(function(char)
+    bindHumanoid(char:WaitForChild("Humanoid"))
+end)
+
+-- ========= WindUI Integration =========
+Tabs.Main:Toggle({
+    Title = "Enabled Speed",
+    Value = false,
+    Callback = function(state)
+        speedEnforced = state
+        local h = speedHumanoid
+        if not h or not h.Parent then return end
+        if state then
+            if not speedTickConn then
+                speedTickConn = game:GetService("RunService").Heartbeat:Connect(heartbeat)
+            end
+            if canEnforce() then setWalkSpeed(h, speedCurrent) end
+        else
+            disconnectAll()
+            setWalkSpeed(h, 16) -- Reset ke default
+        end
+    end
+})
+
+Tabs.Main:Slider({ 
+    Title = "Speed Set", 
+    Step = 1, 
+    Value = {
+        Min = 16, 
+        Max = 200, 
+        Default = 16, 
+    },
+    Callback = function(value)
+        speedCurrent = value
+        if speedEnforced and canEnforce() then
+            setWalkSpeed(speedHumanoid, speedCurrent)
+        end
+    end
+})
+
+
+Tabs.Main:Button({
+    Title = "Reset Speed",
+    Callback = function()
+        speedCurrent = 16
+        if speedHumanoid and speedHumanoid.Parent then
+            if speedEnforced and canEnforce() then
+                setWalkSpeed(speedHumanoid, speedCurrent)
+            else
+                setWalkSpeed(speedHumanoid, 16)
+            end
+        end
+    end
+})
+
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote
+local PlayerActionEvent = ReplicatedStorage.Remotes.Game.PlayerActionEvent -- RemoteEvent 
+
+-- Variabel untuk toggle
+local autoRepair = false
+
+-- Toggle di WindUI
+Tabs.Main:Toggle({ 
+    Title = "Auto Repaired Generator", 
+    Value = false,
+    Callback = function(state)
+        autoRepair = state
+        if state then
+        else
+        end
+    end
+})
+
+-- Loop untuk firesignal
+spawn(function()
+    while true do
+        if autoRepair then
+            firesignal(PlayerActionEvent.OnClientEvent, "Repaired Generator", 2)
+        end
+        task.wait(0.1) -- delay 1 detik
+    end
+end)
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PlayerActionEvent = ReplicatedStorage.Remotes.Game.PlayerActionEvent -- RemoteEvent
+
+-- Variabel kontrol
+local GeneratorV2 = false
+
+-- Toggle WindUI
+Tabs.Main:Toggle({
+    Title = "Generator v2",
+    Value = false,
+    Callback = function(state)
+        GeneratorV2 = state
+
+        task.spawn(function()
+            while GeneratorV2 do
+                firesignal(PlayerActionEvent.OnClientEvent, "Got Chased", 2)
+                task.wait(0.1)
+            end
         end)
     end
+})
 
-    SCPESPCache[model]=nil
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote
+local Phonk1 = ReplicatedStorage.Remotes.Pallet.Jason["Destroy-Global"] -- RemoteEvent 
+
+-- Variabel kontrol
+local autoDestroy = false
+
+-- Toggle GUI
+Tabs.Main:Toggle({
+    Title = "Auto Destroy Global",
+    Value = false,
+    Callback = function(state)
+        autoDestroy = state
+
+        if state then
+            task.spawn(function()
+                while autoDestroy do
+                    Phonk1:FireServer(PalletPointSlide)
+                    task.wait(0.1) -- ubah ke 0.001 kalau mau super cepat
+                end
+            end)
+        end
+    end
+})
+
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote
+local BasicAttack = ReplicatedStorage.Remotes.Attacks.BasicAttack -- RemoteEvent 
+
+-- Variabel kontrol
+local autoAttack = false
+
+-- Toggle GUI
+Tabs.Main:Toggle({
+    Title = "Auto Basic Attack",
+    Value = false,
+    Callback = function(state)
+        autoAttack = state
+
+        if state then
+            -- Loop otomatis
+            task.spawn(function()
+                while autoAttack do
+                    BasicAttack:FireServer()
+                    task.wait(0.1) -- ganti 0.001 kalau mau super cepat
+                end
+            end)
+        end
+    end
+})
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote
+local hit = ReplicatedStorage.Remotes.Attacks.hit -- RemoteEvent 
+
+-- Variabel kontrol
+local autoHit = false
+
+-- Toggle GUI
+Tabs.Main:Toggle({
+    Title = "Auto Hit",
+    Value = false,
+    Callback = function(state)
+        autoHit = state
+
+        if state then
+            -- Jalankan loop di thread terpisah
+            task.spawn(function()
+                while autoHit do
+                    firesignal(hit.OnClientEvent)
+                    task.wait(0.1) -- ubah ke 0.001 kalau mau lebih cepat
+                end
+            end)
+        end
+    end
+})
+
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote
+local HookEvent = ReplicatedStorage.Remotes.Carry.HookEvent -- RemoteEvent 
+
+-- Variabel kontrol
+local autoHook = false
+
+-- Toggle GUI
+Tabs.Main:Toggle({
+    Title = "Auto Hook",
+    Value = false,
+    Callback = function(state)
+        autoHook = state
+
+        if state then
+            task.spawn(function()
+                -- Tunggu sampai Map, Hook, dan HookPoint benar-benar muncul
+                local Map = workspace:WaitForChild("Map")
+                local HookFolder = Map:WaitForChild("Hook")
+                local HookPoint = HookFolder:WaitForChild("HookPoint")
+
+                -- Loop otomatis
+                while autoHook do
+                    firesignal(HookEvent.OnClientEvent, HookPoint)
+                    task.wait(0.1) -- ubah ke 0.001 kalau mau super cepat
+                end
+            end)
+        end
+    end
+})
+
+
+Tabs.Visual:Section({ Title = "View" })
+
+--// Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--// Variabel
+local ESPEnabled = false
+local NotifyEnabled = true
+local NotifyDistance = 150
+local ESPFolder = {}
+local NotifiedEnemies = {}
+
+--// Fungsi buat ESP karakter
+local function CreateESP(player)
+	if player == LocalPlayer then return end
+	if ESPFolder[player] then return end
+	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+
+	local esp = {}
+
+	-- Highlight karakter
+	local highlight = Instance.new("Highlight")
+	highlight.Adornee = player.Character
+	highlight.FillTransparency = 0.6
+	highlight.OutlineTransparency = 0
+	highlight.OutlineColor = Color3.new(1, 1, 1)
+	highlight.Parent = workspace
+
+	-- Billboard nama + jarak
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = player.Character:FindFirstChild("HumanoidRootPart")
+	billboard.Size = UDim2.new(0, 100, 0, 30)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = PlayerGui
+
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Size = UDim2.fromScale(1, 1)
+	textLabel.BackgroundTransparency = 1
+	textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	textLabel.TextStrokeTransparency = 0
+	textLabel.Font = Enum.Font.SourceSansBold
+	textLabel.TextScaled = true
+	textLabel.Text = player.Name
+	textLabel.Parent = billboard
+
+	esp.Highlight = highlight
+	esp.Billboard = billboard
+	esp.TextLabel = textLabel
+	ESPFolder[player] = esp
 end
 
-----------------------------------------------------------------
--- GET ADORNEE
-----------------------------------------------------------------
-
-local function GetAdornee(model)
-
-    if model.PrimaryPart then
-        return model
-    end
-
-    local part=
-        model:FindFirstChild("HumanoidRootPart",true)
-        or model:FindFirstChildWhichIsA("BasePart",true)
-
-    return part and model or nil
+--// Hapus ESP
+local function RemoveESP(player)
+	local esp = ESPFolder[player]
+	if esp then
+		if esp.Highlight then esp.Highlight:Destroy() end
+		if esp.Billboard then esp.Billboard:Destroy() end
+		ESPFolder[player] = nil
+	end
+	NotifiedEnemies[player] = nil
 end
 
-----------------------------------------------------------------
--- CREATE
-----------------------------------------------------------------
-
-local function CreateSCPESP(model)
-
-    if not ESP_SCP
-    or SCPESPCache[model]
-    or not model.Parent then
-        return
-    end
-
-    local adornee=GetAdornee(model)
-
-    if not adornee then
-        return
-    end
-
-    local hl=Instance.new("Highlight")
-
-    hl.Name="SCPESP"
-    hl.Adornee=model
-
-    hl.FillColor=Color3.fromRGB(170,0,255)
-    hl.OutlineColor=Color3.fromRGB(220,170,255)
-
-    hl.FillTransparency=0.45
-    hl.OutlineTransparency=0
-
-    hl.DepthMode=
-        Enum.HighlightDepthMode.AlwaysOnTop
-
-    hl.Parent=SCPESPFolder
-
-    SCPESPCache[model]=hl
-
-    ------------------------------------------------
-    -- AUTO REMOVE
-    ------------------------------------------------
-
-    SCPConnections[model]=model.AncestryChanged:Connect(function(_,parent)
-
-        if not parent then
-            RemoveSCPESP(model)
-        end
-    end)
+--// Hapus semua ESP (untuk refresh toggle)
+local function ClearAllESP()
+	for player, esp in pairs(ESPFolder) do
+		RemoveESP(player)
+	end
+	table.clear(ESPFolder)
 end
 
-----------------------------------------------------------------
--- SCAN
-----------------------------------------------------------------
+--// Loop utama
+RunService.RenderStepped:Connect(function()
+	if not ESPEnabled then return end
 
-local function ScanSCP()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local rootPart = player.Character.HumanoidRootPart
+			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+			if humanoid and humanoid.Health > 0 then
+				local distance = (rootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
 
-    local map=workspace:FindFirstChild("Map")
+				-- Warna sesuai tim
+				local color = Color3.fromRGB(255, 255, 255)
+				if player.Team and LocalPlayer.Team then
+					color = (player.Team == LocalPlayer.Team) and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+				end
 
-    if not map then
-        return
-    end
+				local esp = ESPFolder[player]
+				if not esp then continue end
 
-    for _,obj in ipairs(map:GetDescendants()) do
+				-- Update Highlight
+				if esp.Highlight then
+					esp.Highlight.Enabled = true
+					esp.Highlight.FillColor = color
+					esp.Highlight.OutlineColor = color
+				end
 
-        if IsSCP(obj) then
-            CreateSCPESP(obj)
-        end
-    end
-end
+				-- Update Billboard
+				if esp.Billboard and esp.TextLabel then
+					esp.Billboard.Enabled = true
+					esp.TextLabel.Text = player.Name .. " | " .. math.floor(distance) .. " Stud"
+					local scale = math.clamp(200 / distance, 0.5, 1)
+					esp.TextLabel.TextScaled = false
+					esp.TextLabel.TextSize = 14 * scale
+					esp.TextLabel.TextColor3 = color
+				end
 
-----------------------------------------------------------------
--- INITIAL SCAN
-----------------------------------------------------------------
-
-ScanSCP()
-
-----------------------------------------------------------------
--- REALTIME DETECT
-----------------------------------------------------------------
-
-local map=workspace:FindFirstChild("Map")
-
-if map then
-
-    map.DescendantAdded:Connect(function(obj)
-
-        if IsSCP(obj) then
-
-            task.wait(0.2)
-
-            CreateSCPESP(obj)
-        end
-    end)
-end
-
-----------------------------------------------------------------
--- REFRESH
-----------------------------------------------------------------
-
-task.spawn(function()
-
-    while task.wait(2) do
-
-        if not getgenv().FORKT_RUNNING then
-            break
-        end
-
-        ------------------------------------------------
-        -- DISABLED
-        ------------------------------------------------
-
-        if not ESP_SCP then
-
-            for model in pairs(SCPESPCache) do
-                RemoveSCPESP(model)
-            end
-
-            continue
-        end
-
-        ------------------------------------------------
-        -- VALIDATE
-        ------------------------------------------------
-
-        for model,esp in pairs(SCPESPCache) do
-
-            if not model
-            or not model.Parent
-            or not esp
-            or not esp.Parent then
-
-                RemoveSCPESP(model)
-
-            elseif not esp.Adornee then
-
-                esp.Adornee=model
-            end
-        end
-
-        ------------------------------------------------
-        -- RESCAN
-        ------------------------------------------------
-
-        ScanSCP()
-    end
+				-- Notifikasi musuh dekat
+				if NotifyEnabled and player.Team ~= LocalPlayer.Team and distance <= NotifyDistance then
+					if not NotifiedEnemies[player] then
+						NotifiedEnemies[player] = true
+						task.spawn(function()
+							WindUI:Notify({
+								Title = "⚠️ Musuh Dekat!",
+								Content = player.Name .. " dalam jarak " .. math.floor(distance) .. " stud!",
+								Icon = "slice",
+								Duration = 1,
+							})
+							task.wait(10)
+							NotifiedEnemies[player] = nil
+						end)
+					end
+				end
+			else
+				RemoveESP(player)
+			end
+		end
+	end
 end)
--- // UI MOBILE (FORKT-STYLE)
-local MoonwalkUI = Instance.new("ScreenGui")
-local MoonwalkBtn = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
-local UIStroke = Instance.new("UIStroke")
 
--- Gunakan pcall agar tidak error jika CoreGui diproteksi
-pcall(function()
-    MoonwalkUI.Name = "FORKT_MoonwalkUI"
-    MoonwalkUI.Enabled = false
-    MoonwalkUI.Parent = (game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
-    MoonwalkUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-end)
+--// Toggle ESP
+Tabs.Visual:Toggle({
+	Title = "ESP (Team & Killer)",
+	Value = false,
+	Callback = function(state)
+		ESPEnabled = state
+		if state then
+			ClearAllESP()
+			for _, p in pairs(Players:GetPlayers()) do
+				CreateESP(p)
+			end
+		else
+			ClearAllESP()
+		end
+	end
+})
 
-MoonwalkBtn.Name = "MoonwalkBtn"
-MoonwalkBtn.Parent = MoonwalkUI
-MoonwalkBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MoonwalkBtn.Position = UDim2.new(1, -95, 0.5, -35)
-MoonwalkBtn.Size = UDim2.new(0, 65, 0, 65) -- Sedikit dikecilkan agar pas di jempol mobile
-MoonwalkBtn.Font = Enum.Font.GothamBold
-MoonwalkBtn.Text = "MW: OFF"
-MoonwalkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MoonwalkBtn.TextSize = 14
-MoonwalkBtn.Draggable = true 
+--// Toggle Notifikasi
+Tabs.Visual:Toggle({
+	Title = "Notify Killer Nearby",
+	Value = true,
+	Callback = function(state)
+		NotifyEnabled = state
+	end
+})
 
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = MoonwalkBtn
 
-UIStroke.Color = Color3.fromRGB(100, 100, 100)
+
+-------------------------------------------------------
+-- TOGGLE BUTTON (PUTIH AGAK TRANSPARAN) + ANIMASI BARU
+-- by HDragons (WindUI Support)
+-------------------------------------------------------
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-------------------------------------------------------
+-- GUI BUTTON
+-------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "WindUIButton"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = game.CoreGui
+
+local ImgBtn = Instance.new("ImageButton")
+ImgBtn.Parent = ScreenGui
+ImgBtn.Size = UDim2.new(0, 60, 0, 60)
+ImgBtn.Position = UDim2.new(0, 100, 1, -250)
+ImgBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ImgBtn.BackgroundTransparency = 0.3
+ImgBtn.Image = "rbxassetid://131269662643486" -- icon planet
+ImgBtn.ImageTransparency = 0.1
+ImgBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+ImgBtn.AutoButtonColor = false
+
+local UICorner = Instance.new("UICorner", ImgBtn)
+UICorner.CornerRadius = UDim.new(1, 0)
+
+local UIStroke = Instance.new("UIStroke", ImgBtn)
+UIStroke.Color = Color3.fromRGB(200, 200, 200)
 UIStroke.Thickness = 2
-UIStroke.Parent = MoonwalkBtn
+UIStroke.Transparency = 0.4
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- // CORE FUNCTION: TOGGLE
-local function ToggleMoonwalk()
-    -- Cek Premium (Gunakan variabel global yang kamu pakai di script utama)
-    if not getgenv().FORKT_PREMIUM then 
-        if WindUI then
-            WindUI:Notify({ Title = "VIP Required", Content = "Fitur ini hanya untuk member Premium!", Icon = "lucide:lock" })
-        end
-        return 
-    end
-
-    getgenv().MoonwalkEnabled = not getgenv().MoonwalkEnabled
-    
-    -- Update UI Look
-    if getgenv().MoonwalkEnabled then
-        MoonwalkBtn.Text = "MW: ON"
-        MoonwalkBtn.TextColor3 = Color3.fromRGB(247, 107, 28)
-        UIStroke.Color = Color3.fromRGB(247, 107, 28)
-    else
-        MoonwalkBtn.Text = "MW: OFF"
-        MoonwalkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        UIStroke.Color = Color3.fromRGB(100, 100, 100)
-        
-        -- Perbaikan: Pastikan mengambil Humanoid terbaru saat karakter respawn
-        local char = game.Players.LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.AutoRotate = true end
-    end
-end
-
--- // INPUT LISTENERS
-MoonwalkBtn.MouseButton1Click:Connect(ToggleMoonwalk)
-
--- Gunakan UserInputService yang sudah didefinisikan sebelumnya
-game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == KEY_TOGGLE then
-        ToggleMoonwalk()
-    end
+-------------------------------------------------------
+-- EFEK HOVER (Glow halus)
+-------------------------------------------------------
+ImgBtn.MouseEnter:Connect(function()
+	TweenService:Create(ImgBtn, TweenInfo.new(0.2), {
+		BackgroundTransparency = 0.15
+	}):Play()
+	TweenService:Create(UIStroke, TweenInfo.new(0.2), {
+		Transparency = 0.1
+	}):Play()
 end)
 
--- =========================================================
--- 2. SETUP CROSSHAIR (DYNAMIC SIZE READY)
--- =========================================================
-if TargetGui:FindFirstChild("VeilCrosshair") then TargetGui.VeilCrosshair:Destroy() end
+ImgBtn.MouseLeave:Connect(function()
+	TweenService:Create(ImgBtn, TweenInfo.new(0.3), {
+		BackgroundTransparency = 0.3
+	}):Play()
+	TweenService:Create(UIStroke, TweenInfo.new(0.3), {
+		Transparency = 0.4
+	}):Play()
+end)
 
-getgenv().CrosshairGui = Instance.new("ScreenGui") 
-getgenv().CrosshairGui.Name = "VeilCrosshair" 
-getgenv().CrosshairGui.IgnoreGuiInset = true 
-getgenv().CrosshairGui.ResetOnSpawn = false
-getgenv().CrosshairGui.Enabled = false 
-getgenv().CrosshairGui.Parent = TargetGui
-
-local dot = Instance.new("Frame", getgenv().CrosshairGui)
-dot.Name = "DotMarker"
-dot.Size = UDim2.new(0, 4, 0, 4) 
-dot.AnchorPoint = v2(0.5, 0.5) 
-dot.Position = UDim2.new(0.5, 0, 0.5, 0) 
-dot.BackgroundColor3 = Color3.fromRGB(255, 0, 0) 
-dot.BorderSizePixel = 0
-
-local dotCorner = Instance.new("UICorner", dot)
-dotCorner.CornerRadius = UDim.new(1, 0)
-
-local dotStroke = Instance.new("UIStroke", dot)
-dotStroke.Color = Color3.new(0, 0, 0)
-dotStroke.Thickness = 1.1
-
--- 3. SETUP PARRY RING
-local oldRing = TargetGui:FindFirstChild("FORKT_ParryRing")
-if oldRing then oldRing:Destroy() end
-
-------------------------------------------------
--- PARRY RING
-------------------------------------------------
-
-local oldRing =
-    TargetGui:FindFirstChild("FORKT_ParryRing")
-if oldRing then
-    oldRing:Destroy()
-end
-local ParryRing =
-    Instance.new("CylinderHandleAdornment")
-ParryRing.Name = "FORKT_ParryRing"
-ParryRing.Color3 =
-    Color3.fromRGB(170,40,255)
-ParryRing.Transparency = 0.7
-ParryRing.AlwaysOnTop = true
-ParryRing.ZIndex = 10
-
-ParryRing.Height = 0.05
-
-local radius =
-    tonumber(ParryDistance)
-    or 10
-ParryRing.Radius = radius
-ParryRing.CFrame =
-    CFrame.new(0,-2.8,0)
-    * CFrame.Angles(
-        math.rad(90),
-        0,
-        0
-    )
-ParryRing.Adornee = HumanoidRootPart
-ParryRing.Parent = TargetGui
-
-----------------------------------------------------------------
--- UTILITY FUNCTIONS (ESP LOGIC) - OPTIMIZED
-----------------------------------------------------------------
-local function GetGameValue(obj, name)
-    if typeof(obj) ~= "Instance" then return nil end 
-    
-    -- 1. Cek Attribute Dulu (Sangat Cepat, 0 Lag)
-    local attr = obj:GetAttribute(name)
-    if attr ~= nil then return attr end
-    local child = obj:FindFirstChild(name)
-    if child then
-        if child:IsA("ValueBase") then 
-            return child.Value 
-        end
-    end
-    
-    return nil
+-------------------------------------------------------
+-- ANIMASI KLIK (shrink + pulse)
+-------------------------------------------------------
+local function playClickAnim()
+	local shrink = TweenService:Create(ImgBtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 52, 0, 52)
+	})
+	local grow = TweenService:Create(ImgBtn, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 60, 0, 60)
+	})
+	shrink:Play()
+	shrink.Completed:Wait()
+	grow:Play()
 end
 
-local function CreateBillboardTag(text, color, size, textSize)
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "TagESP"
-    billboard.AlwaysOnTop = true
-    billboard.Size = size or UDim2.new(0, 150, 0, 40)
-    
-    billboard.LightInfluence = 0 
-    billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = color
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = textSize or 12
-    label.TextWrapped = true
-    label.RichText = true 
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1.2
-    stroke.Color = Color3.new(0, 0, 0)
-    stroke.Transparency = 0.2
-    stroke.Parent = label
-    
-    label.Parent = billboard
-    
-    return billboard
-end
---// Variabel Helper (Taruh di bagian atas skrip jika belum ada)
-local CurrentYaw = 0
-local CurrentSway = 0
+-------------------------------------------------------
+-- ANIMASI WINDOW OPEN/CLOSE (Fade + Slide)
+-------------------------------------------------------
+local function animateWindowOpen(windowFrame)
+	if not windowFrame then return end
+	windowFrame.Visible = true
+	windowFrame.BackgroundTransparency = 1
+	windowFrame.Position = windowFrame.Position + UDim2.new(0, 0, 0.05, 0)
 
-local function HandleMoonwalk()
-    RunService.RenderStepped:Connect(function(dt)
-        -- Cek apakah fitur diaktifkan dari UI/Toggle
-        if getgenv().MoonwalkEnabled then
-            local char = LocalPlayer.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            local hum = char and char:FindFirstChild("Humanoid")
-            
-            if root and hum and hum.Health > 0 then
-                -- 1. Matikan AutoRotate agar tidak bentrok dengan script
-                hum.AutoRotate = false
-                
-                -- 2. Ambil arah kamera (Logic dari script VDS kamu)
-                local cam = workspace.CurrentCamera
-                local look = cam.CFrame.LookVector
-                local camYaw = math.deg(math.atan2(look.X, look.Z))
-                
-                -- 3. Target Yaw (Belakang + Offset)
-                local targetYaw = camYaw + 180 -- Mundur
-                
-                -- 4. Smooth Rotation (Normalize Angle agar tidak mutar balik)
-                local diff = (targetYaw - CurrentYaw + 180) % 360 - 180
-                CurrentYaw = CurrentYaw + (diff * 0.28 * math.clamp(dt * 60, 0, 3))
-                
-                -- 5. Hyper Zigzag Logic (Ambil dari Speed & Amount Slider/Setting)
-                local isMoving = hum.MoveDirection.Magnitude > 0.1
-                local targetSway = 0
-                
-                if isMoving then
-                    -- Gunakan nilai dari slider kamu atau default VDS
-                    local speed = getgenv().MoonwalkZigzagSpeed or 14
-                    local amount = getgenv().MoonwalkZigzagAmount or 52
-                    targetSway = math.sin(tick() * speed) * amount
-                end
-                
-                -- Smoothing goyangan
-                CurrentSway = CurrentSway + (targetSway - CurrentSway) * 0.45
-                
-                -- 6. Apply Final CFrame ke Karakter
-                local finalRotation = CFrame.Angles(0, math.rad(CurrentYaw + CurrentSway), 0)
-                root.CFrame = CFrame.new(root.Position) * finalRotation
-                
-                -- 7. Movement Boost (Agar licin dan cepat)
-                if isMoving then
-                    local boost = getgenv().MoonwalkBoostPower or 1.15
-                    root.Velocity = Vector3.new(
-                        hum.MoveDirection.X * (hum.WalkSpeed * boost),
-                        root.Velocity.Y, -- Pertahankan gravitasi
-                        hum.MoveDirection.Z * (hum.WalkSpeed * boost)
-                    )
-                end
-            end
-        else
-            -- Kembalikan ke normal jika dimatikan
-            local char = LocalPlayer.Character
-            local hum = char and char:FindFirstChild("Humanoid")
-            if hum and not hum.AutoRotate then
-                hum.AutoRotate = true
-            end
-        end
-    end)
+	TweenService:Create(windowFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0,
+		Position = windowFrame.Position - UDim2.new(0, 0, 0.05, 0)
+	}):Play()
 end
 
--- Jalankan fungsinya sekali saja
-task.spawn(HandleMoonwalk)
-
-local ESP_UI_Folder = PlayerGui:FindFirstChild("FORKT_ESP_UI")
-if not ESP_UI_Folder then
-    ESP_UI_Folder = Instance.new("ScreenGui")
-    ESP_UI_Folder.Name = "FORKT_ESP_UI"
-    ESP_UI_Folder.ResetOnSpawn = false
-    ESP_UI_Folder.IgnoreGuiInset = true
-    ESP_UI_Folder.Parent = PlayerGui
+local function animateWindowClose(windowFrame)
+	if not windowFrame then return end
+	local tween = TweenService:Create(windowFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		BackgroundTransparency = 1,
+		Position = windowFrame.Position + UDim2.new(0, 0, 0.05, 0)
+	})
+	tween:Play()
+	tween.Completed:Wait()
+	windowFrame.Visible = false
 end
 
-local ESP_3D_Folder = workspace.CurrentCamera:FindFirstChild("FORKT_ESP_3D")
-if not ESP_3D_Folder then
-    ESP_3D_Folder = Instance.new("Folder")
-    ESP_3D_Folder.Name = "FORKT_ESP_3D"
-    ESP_3D_Folder.Parent = workspace.CurrentCamera
-end
-local isFPP = false
+-------------------------------------------------------
+-- SISTEM TOGGLE WINDUI
+-------------------------------------------------------
+local isOpen = true
+local debounce = false
 
-local fppHideConn = nil 
+ImgBtn.MouseButton1Click:Connect(function()
+	if debounce then return end
+	debounce = true
+	playClickAnim()
 
-local function SwitchCameraMode(toFPP)
-    local lp = Players.LocalPlayer
-    
-    if toFPP then
-        lp.CameraMode = Enum.CameraMode.LockFirstPerson
-        
-        -- [FIX KEPALA KETUTUPAN & ROTASI BADAN] 
-        if not fppHideConn then
-            fppHideConn = RunService.RenderStepped:Connect(function()
-                local char = lp.Character
-                if char then
-                    -- 1. Sembunyikan Kepala
-                    local head = char:FindFirstChild("Head")
-                    if head then head.LocalTransparencyModifier = 1 end
-                    
-                    -- 2. Sembunyikan semua aksesoris (Rambut, Topi, Topeng, dll)
-                    for _, obj in ipairs(char:GetChildren()) do
-                        if obj:IsA("Accessory") then
-                            local handle = obj:FindFirstChild("Handle")
-                            if handle then handle.LocalTransparencyModifier = 1 end
-                        end
-                    end
-                    
-                    -- 3. Paksa Badan Menghadap Kamera (Real-time Sync)
-                    local hrp = char:FindFirstChild("HumanoidRootPart")
-                    local hum = char:FindFirstChild("Humanoid")
-                    local cam = workspace.CurrentCamera
-                    
-                    if hrp and hum and cam then
-                        -- Matikan rotasi bawaan game agar tidak error/bergetar
-                        hum.AutoRotate = false 
-                        
-                        -- [FIX LOGIKA] Pakai CFrame Angles agar physics badan tetap stabil
-                        local lookY = select(2, cam.CFrame:ToEulerAnglesYXZ())
-                        local currentLook = hrp.Orientation.Y
-                        local targetLook = math.deg(lookY)
-                        
-                        if math.abs(currentLook - targetLook) > 1 then
-                            hrp.CFrame = cnew(hrp.Position) * cangles(0, lookY, 0)
-                        end
-                    end
-                end
-            end)
-        end
-    else
-        lp.CameraMode = Enum.CameraMode.Classic
-        lp.CameraMaxZoomDistance = 128 
-        
-        -- Kembalikan rotasi normal saat kembali ke TPP
-        local char = lp.Character
-        local hum = char and char:FindFirstChild("Humanoid")
-        if hum then hum.AutoRotate = true end
-        
-        if fppHideConn then
-            fppHideConn:Disconnect()
-            fppHideConn = nil
-        end
-        
-        local char = lp.Character
-        if char then
-            local head = char:FindFirstChild("Head")
-            if head then
-                head.LocalTransparencyModifier = 0
-            end
-        
-            for _, obj in ipairs(char:GetChildren()) do
-                if obj:IsA("Accessory") then
-                    local handle = obj:FindFirstChild("Handle")
-                    if handle then
-                        handle.LocalTransparencyModifier = 0
-                    end
-                end
-            end
-        end
-    end
-end
-local function ApplyHighlight(object, color)
-    local h = object:FindFirstChild("H")
-    
-    -- Jika Highlight belum ada, buat baru
-    if not h then
-        h = Instance.new("Highlight")
-        h.Name = "H"
-        h.Adornee = object
-        h.FillTransparency = 0.8
-        h.OutlineTransparency = 0.5
-        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        
-        -- Set warna pertama kali
-        h.FillColor = color
-        h.OutlineColor = color
-        
-        h.Parent = object 
-        return -- Langsung selesai, tidak perlu lanjut ke kode bawah
-    end
-    if h.FillColor ~= color then
-        h.FillColor = color
-        h.OutlineColor = color
-    end
-    
-    -- Hanya pastikan Enabled nyala, jangan dipaksa nulis "true" 60x per detik
-    if not h.Enabled then
-        h.Enabled = true
-    end
+	task.defer(function()
+		if Window and Window.Open and Window.Close then
+			local guiFrame = Window.GUI or Window.Frame or Window.MainFrame
+
+			if isOpen then
+				animateWindowClose(guiFrame)
+				Window:Close()
+			else
+				Window:Open()
+				animateWindowOpen(guiFrame)
+			end
+			isOpen = not isOpen
+		else
+			warn("⚠️ WindUI belum siap! Pastikan variabel 'Window' sudah dibuat.")
+		end
+
+		task.wait(0.3)
+		debounce = false
+	end)
+end)
+
+-------------------------------------------------------
+-- DRAGGING SUPPORT
+-------------------------------------------------------
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	ImgBtn.Position = UDim2.new(
+		startPos.X.Scale, startPos.X.Offset + delta.X,
+		startPos.Y.Scale, startPos.Y.Offset + delta.Y
+	)
 end
 
-local function RemoveHighlight(object)
-    if object then
-        local h = object:FindFirstChild("H")
-        if h then h:Destroy() end
-    end
-end
+ImgBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = ImgBtn.Position
 
-local ESP_PlayerCache = {}
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
 
-local function CreatePlayerESP(player, isKiller)
-    local char = player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChild("Humanoid")
-    
-    if not root or not hum or hum.Health <= 0 then 
-        RemovePlayerESP(player) 
-        ESP_PlayerCache[player.UserId] = nil 
-        return 
-    end
+ImgBtn.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
 
-    local myChar = LocalPlayer.Character
-    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
 
-    -- 1. HITUNG DATA DASAR
-    local dist = m_floor((root.Position - myRoot.Position).Magnitude)
-    local color = isKiller and ESP_COLORS.Killer or ESP_COLORS.Survivor
-    local statusText = ""
-    local bottomText = ""
-
-    -- 2. LOGIKA STATUS (DIPINDAHKAN KE ATAS UNTUK CACHE)
-    if isKiller then
-        local detectedMask = char:GetAttribute("CachedMask") 
-                          or char:GetAttribute("KillerType") 
-                          or char:GetAttribute("SelectedKiller")
-                          or GetGameValue(char, "SelectedKiller")
-                          or GetGameValue(player, "SelectedKiller")
-                          or GetGameValue(char, "Mask") 
-                          or GetGameValue(player, "Mask") 
-                          or char.Name
-
-        if detectedMask then 
-            -- Simpan ke cache agar tidak memberatkan CPU untuk pencarian selanjutnya
-            char:SetAttribute("CachedMask", detectedMask)
-            statusText = MaskNames[detectedMask] or "KILLER"
-            color = MaskColors[detectedMask] or color
-        else
-            statusText = "KILLER"
-        end
-    else
-        local function IsActive(v) return v == true or (type(v) == "number" and v > 0) end
-        
-        -- [FIX] Pendeteksian diekstrak satu per satu agar tidak ada yang terlewat (Anti-Miss)
-        local isHooked = IsActive(GetGameValue(char, "IsHooked")) or IsActive(GetGameValue(player, "IsHooked"))
-        
-        -- [FIX] Tambahkan pendeteksi "IsCarried" dan cek juga di objek Player
-        local isCarried = IsActive(GetGameValue(char, "Carried")) 
-                       or IsActive(GetGameValue(char, "IsCarried")) 
-                       or IsActive(GetGameValue(char, "Grabbed"))
-                       or IsActive(GetGameValue(player, "Carried"))
-                       
-        local isKnocked = IsActive(GetGameValue(char, "Knocked")) or IsActive(GetGameValue(char, "IsKnocked"))
-
-        -- Eksekusi Status Survivor
-        if isHooked then
-            color = Color3.fromRGB(255, 75, 147); statusText = "HOOKED"
-        elseif isCarried then
-            color = Color3.fromRGB(200, 75, 255); statusText = "CARRIED"
-        elseif isKnocked then
-            color = Color3.fromRGB(255, 150, 0); statusText = "KNOCKED"
-        elseif hum.Health < hum.MaxHealth then 
-            color = Color3.fromRGB(255, 220, 50); statusText = "INJURED" 
-        else
-            statusText = "IDLE"
-        end
-    end
-    -- 4. FORMAT ULANG TEKS (Hanya jika lolos cache)
-    if isKiller then
-        bottomText = s_format('<font color="#DDDDDD">%dm</font> | <font color="#%s">[%s]</font>', dist, color:ToHex(), string.upper(statusText))
-    else
-        if statusText == "IDLE" then
-            bottomText = s_format('<font color="#DDDDDD">%dm</font>', dist)
-        else
-            bottomText = s_format('<font color="#DDDDDD">%dm</font> | <font color="#%s">%s</font>', dist, color:ToHex(), statusText)
-        end
-    end
-
-    -- Simpan data terbaru ke cache
-    ESP_PlayerCache[player.UserId] = {dist = dist, status = statusText}
-
-    local finalName = s_format('<b>%s</b>\n%s', player.Name, bottomText)
-        -- [LOGIKA BARU] Cek status masing-masing saklar
-    local showName = isKiller and ESP_Killer_Name or (not isKiller and ESP_Survivor_Name)
-    local showHighlight = isKiller and ESP_Killer_Highlight or (not isKiller and ESP_Survivor_Highlight)
-
-    -- Eksekusi Highlight Siluet
-    if showHighlight then
-        ApplyHighlight(char, color)
-    else
-        RemoveHighlight(char)
-    end
-    
-    -- Eksekusi Teks Nama
-    local bg = root:FindFirstChild("TagESP")
-    if showName then
-        if not bg then
-            bg = Instance.new("BillboardGui")
-            bg.Name = "TagESP"
-            bg.Adornee = root
-            bg.Parent = root
-            bg.AlwaysOnTop = true
-            bg.Size = UDim2.new(0, 150, 0, 35) 
-            bg.StudsOffset = v3(0, 4.5, 0)
-            bg.MaxDistance = 2000 
-            bg.ResetOnSpawn = false
-            
-            local lbl = Instance.new("TextLabel")
-            lbl.Name = "Label"
-            lbl.Parent = bg
-            lbl.BackgroundTransparency = 1
-            lbl.Size = UDim2.new(1, 0, 1, 0)
-            lbl.Font = Enum.Font.GothamBold
-            lbl.TextScaled = true
-            lbl.RichText = true
-            lbl.Text = finalName
-            lbl.TextColor3 = color
-            lbl.TextYAlignment = Enum.TextYAlignment.Bottom
-            
-            local constraint = Instance.new("UITextSizeConstraint", lbl)
-            constraint.MaxTextSize = 7
-            constraint.MinTextSize = 5
-
-            local stroke = Instance.new("UIStroke", lbl)
-            stroke.Thickness = 1.5
-            stroke.Color = Color3.fromRGB(10, 10, 10) 
-            stroke.Transparency = 0.3
-            stroke.LineJoinMode = Enum.LineJoinMode.Round
-        else
-            local lbl = bg:FindFirstChild("Label")
-            if lbl and lbl.Text ~= finalName then 
-                lbl.Text = finalName
-                lbl.TextColor3 = color 
-            end
-        end
-    else
-        -- Jika ESP Teks mati, hancurkan UI jika masih ada
-        if bg then bg:Destroy() end
-    end
-end
-
-
-local function RemovePlayerESP(player)
-    local char = player.Character
-    if char then
-        RemoveHighlight(char)
-        local bg = char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart:FindFirstChild("TagESP")
-        if bg then bg:Destroy() end
-    end
-end
-local GEN_COLOR_MID = Color3.fromRGB(255, 140, 0)
-local GEN_COLOR_END = Color3.fromRGB(0, 255, 120)
-
-local function updateGeneratorProgress(generator)
-    if not generator or not generator.Parent then
-        return true
-    end
-
-    local percent =
-        GetGameValue(generator, "RepairProgress")
-        or GetGameValue(generator, "Progress")
-        or 0
-
-    local billboard = generator:FindFirstChild("GenBitchHook")
-
-    -- Remove UI jika selesai / ESP off
-    if percent >= 100 or not ESP_Generator then
-        if billboard then
-            billboard:Destroy()
-        end
-
-        RemoveHighlight(generator)
-        generator:SetAttribute("LastESPPercent", nil)
-
-        return (percent >= 100)
-    end
-
-    -- Smart cache
-    local roundedPercent = math.floor(percent * 10) / 10
-    local lastPercent = generator:GetAttribute("LastESPPercent")
-
-    if lastPercent == roundedPercent and billboard then
-        return false
-    end
-
-    generator:SetAttribute("LastESPPercent", roundedPercent)
-
-    -- Smooth color transition
-    local cp = math.clamp(percent, 0, 100)
-
-    local finalColor =
-        (cp < 50)
-        and ESP_COLORS.Generator:Lerp(GEN_COLOR_MID, cp / 50)
-        or GEN_COLOR_MID:Lerp(GEN_COLOR_END, (cp - 50) / 50)
-
-    ApplyHighlight(generator, finalColor)
-
-    local percentStr = s_format("%.1f%%", roundedPercent)
-
-    -- Target part
-    local targetPart =
-        generator:FindFirstChild("defaultMaterial", true)
-        or (generator:IsA("Model") and generator.PrimaryPart)
-        or generator:FindFirstChildWhichIsA("BasePart", true)
-
-    if not targetPart then
-        return false
-    end
-
-    if not billboard then
-    
-        billboard = Instance.new("BillboardGui")
-        billboard.Name = "GenBitchHook"
-        billboard.Parent = generator
-    
-        billboard.Adornee = targetPart
-        billboard.AlwaysOnTop = true
-        billboard.LightInfluence = 0
-        billboard.ResetOnSpawn = false
-    
-        -- FIX DISTANCE SCALING
-        billboard.MaxDistance = 260
-    
-        -- FIX TEXT VERTICAL BUG
-        billboard.Size = UDim2.new(0, 140, 0, 28)
-    
-        billboard.StudsOffset = v3(0, 3.1, 0)
-    
-        local lbl = Instance.new("TextLabel")
-        lbl.Name = "Label"
-        lbl.Parent = billboard
-    
-        lbl.BackgroundTransparency = 1
-    
-        -- FULL SIZE
-        lbl.Size = UDim2.fromScale(1, 1)
-    
-        -- NO TEXTSCALED (IMPORTANT)
-        lbl.TextScaled = false
-    
-        -- CLEAN HORIZONTAL TEXT
-        lbl.TextWrapped = false
-        lbl.TextXAlignment = Enum.TextXAlignment.Center
-        lbl.TextYAlignment = Enum.TextYAlignment.Center
-    
-        lbl.Font = Enum.Font.GothamBold
-    
-        -- STABLE SIZE
-        lbl.TextSize = 8
-    
-        lbl.RichText = false
-        lbl.Text = percentStr
-        lbl.TextColor3 = finalColor
-    
-        -- CLEANER TEXT
-        local stroke = Instance.new("UIStroke")
-        stroke.Parent = lbl
-        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-        stroke.Thickness = 1.1
-        stroke.Transparency = 0.25
-        stroke.Color = Color3.new(0, 0, 0)
-    
-        -- DISTANCE READABILITY
-        local constraint = Instance.new("UITextSizeConstraint")
-        constraint.Parent = lbl
-        constraint.MaxTextSize = 8
-        constraint.MinTextSize = 6
-    
-    else
-    
-        local lbl =
-            billboard:FindFirstChild("Label")
-    
-        if lbl then
-            lbl.Text = percentStr
-            lbl.TextColor3 = finalColor
-        end
-    end
-    return false
-end
-
-local function RefreshESP()
-    if not workspace.CurrentCamera then
-        return
-    end
-    if #Players:GetPlayers() <= 1 then
-        return
-    end
-    -- 1. PLAYER ESP
-    local players = Players:GetPlayers()
-    for _, p in ipairs(players) do
-        if p ~= LocalPlayer then
-            local team = p.Team
-            local isKiller = false
-            if team and team.Name then
-                isKiller = string.find(string.lower(team.Name), "killer") ~= nil
-            end
-            local shouldESP = false
-            if isKiller and (ESP_Killer_Name or ESP_Killer_Highlight) then
-                shouldESP = true
-            elseif not isKiller and (ESP_Survivor_Name or ESP_Survivor_Highlight) then
-                shouldESP = true
-            end
-            
-            if shouldESP then
-                CreatePlayerESP(p, isKiller)
-            else
-                RemovePlayerESP(p)
-            end
-        end
-    end
-
-    if not CachedMapObjects then return end
-    
-    -- 2. GENERATOR ESP
-    if ESP_Generator then
-        if not PrevESPState.Generator then PrevESPState.Generator = true end
-        local gens = CachedMapObjects.Generators
-        
-        -- [FIX RAM] Gunakan tabel baru yang bersih daripada table.remove berulang kali
-        local newActiveGens = {} 
-        for i = 1, #gens do
-            local obj = gens[i]
-            if obj and obj.Parent then
-                local isFinished = updateGeneratorProgress(obj)
-                if not isFinished then
-                    t_insert(newActiveGens, obj)
-                end
-            end
-        end
-        CachedMapObjects.Generators = newActiveGens
-        ActiveGenerators = newActiveGens
-    elseif PrevESPState.Generator then 
-        local gens = CachedMapObjects.Generators
-        for _, obj in ipairs(gens) do
-            if obj and obj.Parent then
-                RemoveHighlight(obj)
-                local b = obj:FindFirstChild("GenBitchHook")
-                if b then b:Destroy() end
-                if obj:GetAttribute("LastESPPercent") then obj:SetAttribute("LastESPPercent", nil) end
-            end
-        end
-        PrevESPState.Generator = false
-    end
-    
-    -- =========================================================
-    -- 3. PALLET ESP (GOD-TIER DESTRUCTION SENSOR)
-    -- =========================================================
-    if ESP_Pallet then
-        if not PrevESPState.Pallet then PrevESPState.Pallet = true end 
-        local pallets = CachedMapObjects.Pallets
-        local MAX_DISTANCE = 140
-
-        for i = #pallets, 1, -1 do 
-            local pallet = pallets[i]
-            local isValid = pallet and pallet.Parent and pallet:IsDescendantOf(workspace)
-            
-            if isValid then
-                local targetPart = (pallet:IsA("Model") and pallet.PrimaryPart) 
-                                or pallet:FindFirstChildWhichIsA("BasePart", true) 
-                                or (pallet:IsA("BasePart") and pallet)
-                
-                -- Cek Fisik Visual: Apakah Pallet disembunyikan?
-                local hasVisibleParts = false
-                if targetPart then
-                    if pallet:IsA("BasePart") then
-                        hasVisibleParts = pallet.Transparency < 1
-                    else
-                        local parts = pallet:GetDescendants()
-                        for j = 1, #parts do
-                            local p = parts[j]
-                            if p:IsA("BasePart") and p.Transparency < 1 then
-                                hasVisibleParts = true
-                                break
-                            end
-                        end
-                    end
-                end
-                
-                local nLower = string.lower(pallet.Name)
-                local function IsActive(val) return val == true or (type(val) == "number" and val > 0) end
-                
-                local isDropped = IsActive(GetGameValue(pallet, "Dropped")) or IsActive(GetGameValue(pallet, "IsDropped"))
-                local isBroken = IsActive(GetGameValue(pallet, "Broken")) or IsActive(GetGameValue(pallet, "IsBroken")) or IsActive(GetGameValue(pallet, "Destroyed"))
-                local isFake = string.find(nLower, "fake") or string.find(nLower, "broken") or string.find(nLower, "destroyed")
-                
-                -- Jika Jatuh, Rusak, Palsu, atau Part belum di-load oleh server
-                if isDropped or isBroken or isFake or not hasVisibleParts or not targetPart then
-                    local tag = pallet:FindFirstChild("PalletTag")
-                    if tag then tag:Destroy() end 
-                    
-                    if isDropped or isBroken or isFake then
-                        t_remove(pallets, i)
-                    end
-                else
-                    local tag = pallet:FindFirstChild("PalletTag")
-                    if not tag then 
-                        local b = CreateBillboardTag("<b>[PALLET]</b>", ESP_COLORS.Pallet, UDim2.new(0, 50, 0, 18), 6)
-                        b.Name = "PalletTag"
-                        b.Parent = pallet
-                        b.Adornee = targetPart -- SUDAH AMAN
-                        b.MaxDistance = MAX_DISTANCE 
-                    else
-                        -- Jaga-jaga adornee hilang
-                        if not tag.Adornee then tag.Adornee = targetPart end
-                        local lbl = tag:FindFirstChild("Label")
-                        if lbl and lbl.TextColor3 ~= ESP_COLORS.Pallet then
-                            lbl.TextColor3 = ESP_COLORS.Pallet
-                        end
-                    end
-                end
-            else
-                if pallet then
-                    local tag = pallet:FindFirstChild("PalletTag")
-                    if tag then tag:Destroy() end
-                end
-                t_remove(pallets, i) 
-            end
-        end 
-    elseif PrevESPState.Pallet then 
-        for _, pallet in ipairs(CachedMapObjects.Pallets) do 
-            if pallet then 
-                local tag = pallet:FindFirstChild("PalletTag")
-                if tag then tag:Destroy() end 
-            end 
-        end
-        PrevESPState.Pallet = false
-    end
-
-    -- 4. GATE ESP
-    if ESP_Gate then
-        if not PrevESPState.Gate then PrevESPState.Gate = true end
-        local gates = CachedMapObjects.Gates
-        for i = #gates, 1, -1 do 
-            local gate = gates[i]
-            if gate and gate.Parent then
-                ApplyHighlight(gate, ESP_COLORS.Gate) 
-            else
-                t_remove(gates, i)
-            end
-        end 
-    elseif PrevESPState.Gate then 
-        for _, gate in ipairs(CachedMapObjects.Gates) do if gate and gate.Parent then RemoveHighlight(gate) end end
-        PrevESPState.Gate = false
-    end
-
-    -- 5. HOOK ESP
-    if ESP_Hook then
-        if not PrevESPState.Hook then PrevESPState.Hook = true end
-        local hooks = CachedMapObjects.Hooks
-        for i = #hooks, 1, -1 do 
-            local hook = hooks[i]
-            if hook and hook.Parent then
-                -- [LOGIKA KUSTOM TEMPLATE] Terapkan warna ke MeshPart di dalam "Model"
-                local m = hook:FindFirstChild("Model") 
-                if m then 
-                    for _, p in ipairs(m:GetDescendants()) do 
-                        if p:IsA("MeshPart") then ApplyHighlight(p, ESP_COLORS.Hook) end 
-                    end 
-                else
-                    ApplyHighlight(hook, ESP_COLORS.Hook) -- Fallback aman
-                end
-            else
-                t_remove(hooks, i)
-            end
-        end 
-    elseif PrevESPState.Hook then 
-        for _, hook in ipairs(CachedMapObjects.Hooks) do 
-            if hook and hook.Parent then 
-                -- [LOGIKA KUSTOM TEMPLATE] Menghapus warna
-                local m = hook:FindFirstChild("Model") 
-                if m then 
-                    for _, p in ipairs(m:GetDescendants()) do 
-                        if p:IsA("MeshPart") then RemoveHighlight(p) end 
-                    end 
-                else
-                    RemoveHighlight(hook)
-                end
-            end 
-        end
-        PrevESPState.Hook = false
-    end
-end
-
-local cachedRayFilter = {}
-
-local function IsVisible(targetPart)
-    if not WallCheck then return true end
-    
-    local cam = workspace.CurrentCamera
-    local origin = cam.CFrame.Position
-    local direction = (targetPart.Position - origin)
-    local myChar = LocalPlayer.Character
-    
-    -- Reset tabel filter agar bersih dari nil
-    table.clear(cachedRayFilter)
-    if cam then table.insert(cachedRayFilter, cam) end
-  ... (156 KB left)
