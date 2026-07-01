@@ -60,66 +60,78 @@ local function checkVIP()
     return false, nil, nil
 end
 
--- ===== Animasi Loading Baru =====
+-- ===== Animasi Loading Lucu dan Menarik =====
 local function showLoadingAnimation()
     local loadingGui = Instance.new("ScreenGui")
-    loadingGui.Name = "LoadingAnimation"
     SafeParent(loadingGui)
 
-    local animFrame = Instance.new("Frame", loadingGui)
-    animFrame.Size = UDim2.new(0, 200, 0, 50)
-    animFrame.Position = UDim2.new(0.5, -100, 0.5, -25)
-    animFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Instance.new("UICorner", animFrame).CornerRadius = UDim.new(0, 10)
+    -- Background loading lucu
+    local bg = Instance.new("Frame", loadingGui)
+    bg.Size = UDim2.new(0, 400, 0, 250)
+    bg.Position = UDim2.new(0.5, -200, 0.5, -125)
+    bg.BackgroundColor3 = Color3.fromRGB(255, 192, 203) -- pink girly
+    bg.BackgroundTransparency = 0.2
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 20)
 
-    -- Membuat 3 Dot Animasi
-    local dot1 = Instance.new("Frame", animFrame)
-    dot1.Size = UDim2.new(0, 10, 0, 10)
-    dot1.Position = UDim2.new(0.2, 0, 0.5, -5)
-    dot1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", dot1).CornerRadius = UDim.new(1, 0)
+    -- Avatar (gambar lucu, bisa diganti sesuai kebutuhan)
+    local avatar = Instance.new("ImageLabel", bg)
+    avatar.Size = UDim2.new(0, 80, 0, 80)
+    avatar.Position = UDim2.new(0.1, 0, 0.2, 0)
+    avatar.BackgroundTransparency = 1
+    avatar.Image = "https://i.imgur.com/8Km9tLL.png" -- gambar lucu, ganti sesuai selera
+    Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
 
-    local dot2 = Instance.new("Frame", animFrame)
-    dot2.Size = UDim2.new(0, 10, 0, 10)
-    dot2.Position = UDim2.new(0.45, 0, 0.5, -5)
-    dot2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", dot2).CornerRadius = UDim.new(1, 0)
+    -- Nama
+    local nameLabel = Instance.new("TextLabel", bg)
+    nameLabel.Size = UDim2.new(0, 250, 0, 40)
+    nameLabel.Position = UDim2.new(0.3, 0, 0.2, 0)
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextScaled = true
+    nameLabel.BackgroundTransparency = 1
 
-    local dot3 = Instance.new("Frame", animFrame)
-    dot3.Size = UDim2.new(0, 10, 0, 10)
-    dot3.Position = UDim2.new(0.7, 0, 0.5, -5)
-    dot3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", dot3).CornerRadius = UDim.new(1, 0)
+    -- Garis loading lucu
+    local loadingLine = Instance.new("Frame", bg)
+    loadingLine.Size = UDim2.new(0, 300, 0, 10)
+    loadingLine.Position = UDim2.new(0.1, 0, 0.7, 0)
+    loadingLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    loadingLine.BorderSizePixel = 0
+    local fill = Instance.new("Frame", loadingLine)
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(255, 110, 180)
+    fill.BorderSizePixel = 0
 
-    -- Fungsi Animasi untuk Dot
-    local function animateDot(dot, delay)
+    -- Pesan install/data
+    local msg = Instance.new("TextLabel", bg)
+    msg.Size = UDim2.new(0, 380, 0, 50)
+    msg.Position = UDim2.new(0.5, -190, 0.85, 0)
+    msg.Text = "Sedang install data game... Tunggu ya, lagi proses..."
+    msg.TextColor3 = Color3.fromRGB(255, 255, 255)
+    msg.Font = Enum.Font.Gotham
+    msg.TextScaled = true
+    msg.BackgroundTransparency = 1
+
+    -- Animasi garis loading
+    local function animateLoading()
+        local progress = 0
         while true do
-            TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(100, 100, 100)}):Play()
-            task.wait(0.3 + delay)
-            TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-            task.wait(0.3 + delay)
+            progress = progress + 0.01
+            if progress > 1 then progress = 0 end
+            fill.Size = UDim2.new(progress, 0, 1, 0)
+            task.wait(0.05)
         end
     end
 
-    -- Mulai Animasi
-    task.spawn(function()
-        animateDot(dot1, 0)
-    end)
-    task.spawn(function()
-        animateDot(dot2, 0.2)
-    end)
-    task.spawn(function()
-        animateDot(dot3, 0.4)
-    end)
+    task.spawn(animateLoading)
 
-    -- Return objek gui agar bisa dihapus nanti
     return loadingGui
 end
 
 -- ===== Proses utama
 local isVIP, vipType, expireTime = checkVIP()
 
--- Tampilkan loading animation
+-- Tampilkan animasi loading
 local loading = showLoadingAnimation()
 
 -- ===== WEBHOOK =====
@@ -152,12 +164,14 @@ SendWebhookFull(player.Name, player.UserId, isVIP)
 
 -- ===== NON-VIP =====
 if not isVIP then
-    loading:Destroy() -- hilangkan loading saat kick
+    task.wait(5) -- beri waktu lihat animasi, bisa dihapus
+    loading:Destroy()
     player:Kick(KICK_REASON_NONVIP)
     return
 end
 
 -- ===== Loading selesai, hilangin animasi =====
+task.wait(3) -- beri waktu lihat animasi
 loading:Destroy()
 
 -- ===== VIP GUI =====
