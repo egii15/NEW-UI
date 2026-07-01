@@ -13,7 +13,7 @@ local VIP_FULL_URL    = "https://raw.githubusercontent.com/LlyXCode/User/refs/he
 
 local TRIAL_LINK     = "https://pastefy.app/BTwqkGjF/raw"
 local PERMA_LINK     = "https://pastefy.app/BTwqkGjF/raw"
-local FULLPACK_LINK  = "https://pastefy.app/BTwqkGjF/raw"
+local FULLPACK_LINK  = "https://raw.githubusercontent.com/egii15/NEW-UI/refs/heads/main/arsip-2025"
 
 local KICK_REASON_NONVIP = "🚫 Access Denied | Kamu bukan user VIP."
 
