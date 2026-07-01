@@ -9,6 +9,7 @@ local hrp = character:WaitForChild("HumanoidRootPart")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local LocalPlayer = player -- alias supaya sama dengan LocalPlayer
+local MenuRings = workspace["!!! MENU RINGS"]
 local PlayerGui = player:WaitForChild("PlayerGui")
 
 local GameData = {
@@ -40,33 +41,33 @@ local GameData = {
 	},
 
 	-----------------------------------------------------
-	-- CORE SERVICES v29
+	-- CORE SERVICES
 	-----------------------------------------------------
-	ReplicatedStoragev29 = game:GetService("ReplicatedStorage"),
-	Playersv29 = game:GetService("Players"),
-	HttpServicev29 = game:GetService("HttpService"),
+	ReplicatedStorage = game:GetService("ReplicatedStorage"),
+	Players = game:GetService("Players"),
+	HttpService = game:GetService("HttpService"),
 
-	playerv29 = game:GetService("Players").LocalPlayer,
+	player = game:GetService("Players").LocalPlayer,
 
-	Netv29 = require(game:GetService("ReplicatedStorage").Packages.Net),
-	ReplionClientv29 = require(game:GetService("ReplicatedStorage").Packages.Replion).Client,
-	DataReplionv29 = nil,
+	Net = require(game:GetService("ReplicatedStorage").Packages.Net),
+	ReplionClient = require(game:GetService("ReplicatedStorage").Packages.Replion).Client,
+	DataReplion = nil,
 
-	ItemUtilityv29 = require(game:GetService("ReplicatedStorage").Shared.ItemUtility),
+	ItemUtility = require(game:GetService("ReplicatedStorage").Shared.ItemUtility),
 
-	TradeRemotev29 = game:GetService("ReplicatedStorage")
+	TradeRemote = game:GetService("ReplicatedStorage")
 		:WaitForChild("Packages")
 		:WaitForChild("_Index")
 		:WaitForChild("sleitnick_net@0.2.0")
 		:WaitForChild("net")
 		:WaitForChild("RF/InitiateTrade"),
 
-	ItemsFolderv29 = game:GetService("ReplicatedStorage"):WaitForChild("Items"),
+	ItemsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Items"),
 
 	-----------------------------------------------------
-	-- STATE v29
+	-- STATE
 	-----------------------------------------------------
-	statev29 = {
+	state = {
 		selectedTiers = { "Common" },
 		Auto2Trade = false,
 		stopTrade = false,
@@ -75,21 +76,19 @@ local GameData = {
 		fishCount = 0,
 		
 		-- Fitur tambahan
-		selectedItems = {}, -- Changed from selectedFish to selectedItems
-		useItemFilter = false,
-		enabledTypes = {  -- Added type filter config
-			["Fish"] = true,
-			["Enchant Stones"] = true
-		}
+		selectedFish = {},
+		useFishFilter = false
 	},
 
-	TierListv29 = nil,
-	nameToTierv29 = {},
+	TierList = nil,
+	nameToTier = {},
 
-	notifGuiv29 = nil,
-	notifFramev29 = nil,
+	notifGui = nil,
+	notifFrame = nil,
 
-	PlayerMapv29 = {},
+	PlayerMap = {},
+
+	PlayerDropdown = nil,
 
     -- ==================[Jenis Ikan v1]==================
 
@@ -201,7 +200,7 @@ local GameData = {
         ["Angler Rod"] = 168, ["Ares Rod"] = 126, ["Bamboo Rod"] = 258,
         ["Toy Rod"] = 84, ["Lava Rod"] = 2, ["Hazmat Rod"] = 256,
         ["Ghostfinn Rod"] = 169, ["Element Rod"] = 257, ["Angelic Rod"] = 124,
-        ["Gold Rod"] = 8, ["Hyper Rod"] = 9,["Eclipse Rod"] = 656, ["Seabreeze Rod"] = 657,
+        ["Gold Rod"] = 8, ["Hyper Rod"] = 9
     },
 
     -- ================== [Bait] ==================
@@ -210,7 +209,7 @@ local GameData = {
         ["Gold Bait"] = 4, ["Hyper Bait"] = 5, ["Chroma Bait"] = 6,
         ["Dark Matter Bait"] = 8, ["Beach Ball Bait"] = 9, ["Topwater Bait"] = 10,
         ["Corrupt Bait"] = 15, ["Aether Bait"] = 16, ["Nature Bait"] = 17,
-        ["Singularity Bait"] = 18, ["Royal Bait"] = 19, ["Floral Bait"] = 20,
+        ["Singularity Bait"] = 18, ["Royal Bait"] = 19, ["Floral Bait"] = 20
     },
 
     -- ================== [Boat] ==================
@@ -219,58 +218,8 @@ local GameData = {
         ["Speed Boat"] = 5, ["Fishing Boat"] = 6, ["Mini Yacht"] = 14,
         ["Mini Hoverboat"] = 15, ["Hyper Boat"] = 7, ["Dinky Fishing Boat"] = 20,
         ["Aura Boat"] = 17, ["Burger Boat"] = 18, ["Mega Hovercraft"] = 19,
-        ["Froen Boat"] = 11, ["Cruiser Boat"] = 13, ["Rubber Ducky"] = 16,
+        ["Froen Boat"] = 11, ["Cruiser Boat"] = 13, ["Rubber Ducky"] = 16
     },
-
-        -- ================== [Rod Shop] ==================
-    ReplicatedStoragev36 = game:GetService("ReplicatedStorage"),
-
-    RodIDsShopv36 = {
-        ["Luck Rod | 225"] = 79,
-        ["Carbon Rod | 750"] = 76,
-        ["Grass Rod | 1.5K"] = 85,
-        ["Demascus Rod | 3K"] = 77,
-        ["Ice Rod | 5K"] = 78,
-        ["Lucky Rod | 15K"] = 4,
-        ["Midnight Rod | 50K"] = 80,
-        ["Seabreeze Rod | 95K"] = 657,
-        ["Eclipse Rod | 150K"] = 656,
-        ["Steampunk Rod | 215K"] = 6,
-        ["Chrome Rod | 437K"] = 7,
-        ["Fluorescent Rod | 715K"] = 255,
-        ["Astral Rod | 1M"] = 5,
-        ["Angler Rod | 8M"] = 168,
-        ["Ares Rod | 3M"] = 126,
-        ["Bamboo Rod | 12M"] = 258,
-        ["Hazmat Rod | 1.3M"] = 256,
-    },
-
-    RodNamesv36 = {},
-    SelectedRodIDsv36 = {},
-    AutoBuyEnabledv36 = false,
-
-    PurchaseRodRemotev36 = nil,
-    -- ================== [Bait Shop] ==================
-    ReplicatedStoragev37 = game:GetService("ReplicatedStorage"),
-
-    BaitIDsShopv37 = {
-        ["Topwater Bait | 100"] = 10,
-        ["Luck Bait | 1K"] = 2,
-        ["Midnight Bait | 3K"] = 3,
-        ["Nature Bait | 83.5K"] = 17,
-        ["Chroma Bait | 290K"] = 6,
-        ["Dark Matter Bait | 630K"] = 8,
-        ["Corrupt Bait | 1.15M"] = 15,
-        ["Aether Bait | 3.7M"] = 16,
-        ["Floral Bait | 4M"] = 20,
-        ["Singularity Bait | 8.2M"] = 18,
-    },
-
-    BaitNamesv37 = {},
-    SelectedBaitIDsv37 = {},
-    AutoBuyBaitEnabledv37 = false,
-
-    PurchaseBaitRemotev37 = nil,
 
     -- ================== [Traveling Merchant] ==================
 
@@ -410,6 +359,7 @@ local GameData = {
     -- ================== [Island] ==================
     Islands = {
     ["Kohana"] = CFrame.new(-642.243561, 16.0354481, 624.918884, 0.999580681, 0, -0.0289562326, 0, 1, 0, 0.0289562326, 0, 0.999580681),
+    ["Winter Fest"] = CFrame.new(1687.93079, 6.8625145, 3309.67725, 0.96799022, -3.6394315e-08, -0.250987828, 1.06909646e-08, 1, -1.0377223e-07, 0.250987828, 9.77672059e-08, 0.96799022),
     ["Lost Isle"] = CFrame.new(-3660.07031, 26.1918774, -933.131897, -0.77232331, -7.22959044e-08, -0.635229647, -1.90984206e-08, 1, -9.05904614e-08, 0.635229647, -5.7833244e-08, -0.77232331),
     ["Isoteric Island"] = CFrame.new(2029.47913, 27.3972206, 1393.52319, 0.438848287, -3.30229497e-08, -0.89856118, 8.09404801e-08, 1, 2.55982613e-09, 0.89856118, -7.34489944e-08, 0.438848287),
     ["Crater Island"] = CFrame.new(973.268372, 7.36203814, 4879.09277, 0.99999994, -1.67766032e-08, -0.000279307278, 1.67553038e-08, 1, -7.62482344e-08, 0.000279307278, 7.62435519e-08, 0.99999994),
@@ -433,14 +383,10 @@ local GameData = {
     ["Sacred Temple"] = CFrame.new(1478.09546, 0.0774269104, -612.817993, 0.993017375, 0, 0.117968373, 0, 1, 0, -0.117968373, 0, 0.993017375),
     ["Crystalline Passage"] = CFrame.new(6053.09717, -538.900085, 4391.29102, -0.993590963, -1.39414302e-08, 0.10982503, 1.7823354e-10, 1, -7.10982503, 1.27797193e-07, -0.10982503, -0.993590963),
     ["Ancient Ruin"] = CFrame.new(6130.33203, -584.05603, 4632.95166, -0.171970293, -9.77156915e-08, 0.985102117, -7.319955083e-08, 1, 8.64156533e-08, -0.985102117, -5.722441259e-08, -0.171970293),
+    ["Christmas Cave"] = CFrame.new(395.304199, -580.135071, 8901.16113, -0.0874395818, -1.4548089e-08, -0.996169806, 3.18401732e-08, 1, -1.73988202e-08, 0.996169806, -3.32395658e-08, -0.0874395818),
     ["Iron Cavern"] = CFrame.new(-8802.55762, -583.800049, 94.9271545, 0.539917707, 4.95349006e-08, -0.84171778, 2.88506321e-08, 1, 7.7355935e-08, 0.84171778, -6.60499282e-08, 0.539917707),
     ["Iron Cafe"] = CFrame.new(-8641.91016, -547.400183, 161.963455, -0.0101819877, -4.55452422e-08, -0.999948144, 1.64972356e-08, 1, -4.57155878e-08, 0.999948144, -1.69618559e-08, -0.0101819877),
-    ["Pirate Treasure Room"] = CFrame.new(3302.10229, -293.803467, 3017.49951, -0.965538323, 3.13014077e-08, -0.26026091, 6.58369759e-09, 1, 9.58445767e-08, 0.26026091, 9.08281308e-08, -0.965538323),
-    ["Pirate Cove"] = CFrame.new(3321.96069, 10.2510681, 3539.07275, 0.606894374, 7.27147054e-08, -0.794782519, -6.14758875e-08, 1, 4.45472033e-08, 0.794782519, 2.18245155e-08, 0.606894374),
-    ["Crystal Depths"] = CFrame.new(5749.24365, -904.818481, 15403.3418, 0.748294473, 6.75499212e-09, 0.663366735, -9.15655163e-10, 1, -9.15001053e-09, -0.663366735, 6.23948715e-09, 0.748294473),
-    ["Secret Passage"] = CFrame.new(3446.85132, -287.844818, 3397.55054, 0.929098547, 4.31005631e-08, 0.369832247, -3.45148621e-08, 1, -2.9832055e-08, -0.369832247, 1.49522119e-08, 0.929098547),
-    ["Leviathan Room"] = CFrame.new(3474.32983, -287.843231, 3473.8208, -0.891127229, 2.03121733e-08, -0.453753531, 3.47882008e-08, 1, -2.35558275e-08, 0.453753531, -3.67765089e-08, -0.891127229),
---  [""] = CFrame.new(),
+    ["Christmas Island"] = CFrame.new(843.041687, 26.0803814, 1566.52734, 0.00453743944, -9.89134179e-08, -0.999989688, -5.82183262e-08, 1, -9.91785996e-08, 0.999989688, 5.86677444e-08, 0.00453743944),
     },
 
     -- ==================[Save Posisi] ==================
@@ -477,35 +423,24 @@ local GameData = {
         "Sacred Guardian Squid"
     },
 
-    -- ================== [Auto Open Mysterious Cave Wall] ==================
-    AutoOpenWallv20 = false,
-    Connectionv20 = nil,
+    -- ================== [Auto Unlock Iron Cafe] ==================
+    AutoIronCafe = false,
+    TaskIronCafe = nil,
 
-    ReplicatedStoragev20 = game:GetService("ReplicatedStorage"),
-    RunServicev20 = game:GetService("RunService"),
+    GuppyList = {
+        "Builderman Guppy",
+        "Shedletsky Guppy",
+        "BFulleyes Guppy",
+        "Guest Guppy"
+    },
 
-    NetFolderv20 = nil,
-    RE_DialogueEndedv20 = nil,
-    RE_SearchItemPickedUpv20 = nil,
-    RE_GainAccessToMazev20 = nil,
+    connection = nil, -- connection event
 
-    DialogueArgsv20 = { "Carpenter", 2, 1 },
-    SearchItemArgsv20 = { "TNT" },
-
-    ExecuteStepsv20 = function()
-        GameData.RE_DialogueEndedv20:FireServer(unpack(GameData.DialogueArgsv20))
-
-        task.wait(1)
-
-        for i = 1, 4 do
-            GameData.RE_SearchItemPickedUpv20:FireServer(unpack(GameData.SearchItemArgsv20))
-            task.wait(0.5)
-        end
-
-        task.wait(1)
-
-        GameData.RE_GainAccessToMazev20:FireServer()
-    end,
+    Services = {
+        TweenService = game:GetService("TweenService"),
+        UIS = game:GetService("UserInputService"),
+        CoreGui = game:GetService("CoreGui")
+    },
 
     -- ================== [Accses All Boat] ==================
 
@@ -612,15 +547,40 @@ local GameData = {
     RF = {},
     RE = {},
 
+    cutsceneController = nil,
+    originalPlay = nil,
+    originalStop = nil,
+
+    EnableSkip = nil,
     Fastest = nil,
     startBlatantV2 = nil,
 
     -- ================== [Blatant V2] ==================
 
-    Playersv19 = game:GetService("Players"),
-    ReplicatedStoragev19 = game:GetService("ReplicatedStorage"),
+    ReplicatedStoragev16 = game:GetService("ReplicatedStorage"),
 
-    LocalPlayerv19 = nil,
+    Netv16 = {},
+
+    UltraBlatant = {
+        Active = false,
+        Settings = {
+            CompleteDelay = 0.73,
+            CancelDelay = 0.3,
+            ReCastDelay = 0.001
+        }
+    },
+
+    FishingState = {
+        lastCompleteTime = 0,
+        completeCooldown = 0.4
+    },
+
+    LastEventTime = 0,
+
+    -- ================== [Blatant V3] ==================
+
+    ReplicatedStoragev19 = game:GetService("ReplicatedStorage"),
+    Playersv19 = game:GetService("Players"),
 
     NetFolderv19 = nil,
 
@@ -628,16 +588,15 @@ local GameData = {
     RF_RequestMinigamev19 = nil,
     RF_CancelFishingInputsv19 = nil,
     RF_UpdateAutoFishingStatev19 = nil,
-
     RE_FishingCompletedv19 = nil,
     RE_MinigameChangedv19 = nil,
 
     Activev19 = false,
 
     Settingsv19 = {
-        ChargeDelayv19 = 0.007,
-        CompleteDelayv19 = 0.685,
-        CancelDelayv19 = 0.3
+        ChargeDelay = 0.007,
+        CompleteDelay = 0.685,
+        CancelDelay = 0.3
     },
 
     safeFirev19 = function(func)
@@ -645,7 +604,7 @@ local GameData = {
             pcall(func)
         end)
     end,
-    
+
     -- ================== [SKip Rraity] ==================
 
     Players = game:GetService("Players"),
@@ -731,10 +690,17 @@ local GameData = {
     -- ================== [Remove VFX] ==================
 
     RS = game:GetService("ReplicatedStorage"),
+    RunService = game:GetService("RunService"),
 
+    -- VFX Folder
     waterVFXFolder = nil,
+
+    -- Stored VFX Clones
     storedVFX = {},
+
+    -- Connections
     childAddedConn = nil,
+
     -- ================== [Anti AFK Time] ==================
 
     UserInputService = game:GetService("UserInputService"),
@@ -804,198 +770,32 @@ local GameData = {
     AntiAfkThread = nil,
 
 
-    -- ================== [Fishing Animation V1] ==================
+    -- ================== [FishCaught Animation] ==================
 
-    Servicesv23 = {
-        ReplicatedStoragev23 = game:GetService("ReplicatedStorage"),
-        Playersv23 = game:GetService("Players"),
+    Services099 = {
+        ReplicatedStorage099 = game:GetService("ReplicatedStorage"),
+        Players099 = game:GetService("Players"),
     },
 
-    Playerv23 = nil,
-    REFishCaughtv23 = nil,
+    Player099 = nil,
+    REFishCaught099 = nil,
 
-    AnimationControllerv23 = nil,
-    OldPlayAnimationv23 = nil,
+    AnimationController099 = nil,
+    OldPlayAnimation099 = nil,
 
-    AnimationsFolderv23 = nil,
+    AnimationsFolder099 = nil,
+    AnimationList099 = {},
+    AnimationMap099 = {},
+    SelectedAnimationId099 = nil,
 
-    FishCaughtListv23 = {},
-    EquipIdleListv23 = {},
+    AnimationEnabled099 = false,
+    AnimDisabled099 = false,
+    CurrentTrack099 = nil,
 
-    FishCaughtMapv23 = {},
-    EquipIdleMapv23 = {},
-
-    SelectedFishCaughtIdv23 = nil,
-    SelectedEquipIdleIdv23 = nil,
-
-    FishCaughtEnabledv23 = false,
-    EquipIdleEnabledv23 = false,
-
-    BlockGameAnimv23 = false,
-
-    FishCaughtTrackv23 = nil,
-    EquipIdleTrackv23 = nil,
-
-        -- ================== [Fishing Animation V2] ==================
-
-    CustomAnimationEnabledv34 = false,
-    SelectedAnimationWeaponv34 = "Holy Trident",
-
-    Animationsv34 = require(game:GetService("ReplicatedStorage").Modules.Animations),
-
-    AnimationBackupv34 = {},
-
-    AnimationPresetsv34 = {
-        ["The Vanquisher"] = {
-            StartRodCharge = "The Vanquisher - StartRodCharge",
-            RodThrow = "The Vanquisher - RodThrow",
-            ReelStart = "The Vanquisher - ReelStart",
-            ReelingIdle = "The Vanquisher - ReelingIdle",
-            ReelIntermission = "The Vanquisher - ReelIntermission",
-            FishCaught = "The Vanquisher - FishCaught",
-            EquipIdle = "The Vanquisher - EquipIdle",
-        },
-
-        ["Soul Scythe"] = {
-            StartRodCharge = "Soul Scythe - StartRodCharge",
-            RodThrow = "Soul Scythe - RodThrow",
-            ReelStart = "Soul Scythe - ReelStart",
-            ReelingIdle = "Soul Scythe - ReelingIdle",
-            ReelIntermission = "Soul Scythe - ReelIntermission",
-            FishCaught = "Soul Scythe - FishCaught",
-            EquipIdle = "Soul Scythe - EquipIdle",
-        },
-
-        ["Princess Parasol"] = {
-            StartRodCharge = "Princess Parasol - StartRodCharge",
-            RodThrow = "Princess Parasol - RodThrow",
-            ReelStart = "Princess Parasol - ReelStart",
-            ReelingIdle = "Princess Parasol - ReelingIdle",
-            ReelIntermission = "Princess Parasol - ReelIntermission",
-            FishCaught = "Princess Parasol - FishCaught",
-            EquipIdle = "Princess Parasol - EquipIdle",
-        },
-
-        ["Oceanic Harpoon"] = {
-            StartRodCharge = "Oceanic Harpoon - StartRodCharge",
-            RodThrow = "Oceanic Harpoon - RodThrow",
-            ReelStart = "ReelStart",
-            ReelingIdle = "Oceanic Harpoon - ReelingIdle",
-            ReelIntermission = "ReelIntermission",
-            LoopedRodCharge = "Oceanic Harpoon - LoopedRodCharge",
-            FishCaught = "FishCaught",
-            EquipIdle = "Oceanic Harpoon - EquipIdle",
-        },
-
-        ["Holy Trident"] = {
-            StartRodCharge = "Holy Trident - StartRodCharge",
-            RodThrow = "Holy Trident - RodThrow",
-            ReelStart = "Holy Trident - ReelStart",
-            ReelingIdle = "Holy Trident - ReelingIdle",
-            ReelIntermission = "Holy Trident - ReelIntermission",
-            FishCaught = "Holy Trident - FishCaught",
-            EquipIdle = "Holy Trident - EquipIdle",
-        },
-
-        ["Gingerbread Katana"] = {
-            StartRodCharge = "Gingerbread Katana - StartRodCharge",
-            RodThrow = "Gingerbread Katana - RodThrow",
-            ReelStart = "Gingerbread Katana - ReelStart",
-            ReelingIdle = "Gingerbread Katana - ReelingIdle",
-            ReelIntermission = "Gingerbread Katana - ReelIntermission",
-            FishCaught = "Gingerbread Katana - FishCaught",
-            EquipIdle = "Gingerbread Katana - EquipIdle",
-        },
-
-        ["Frozen Krampus Scythe"] = {
-            StartRodCharge = "Frozen Krampus Scythe - StartRodCharge",
-            RodThrow = "Frozen Krampus Scythe - RodThrow",
-            ReelStart = "Frozen Krampus Scythe - ReelStart",
-            ReelingIdle = "Frozen Krampus Scythe - ReelingIdle",
-            ReelIntermission = "Frozen Krampus Scythe - ReelIntermission",
-            FishCaught = "Frozen Krampus Scythe - FishCaught",
-            EquipIdle = "Frozen Krampus Scythe - EquipIdle",
-        },
-
-        ["Eclipse Katana"] = {
-            StartRodCharge = "Eclipse Katana - StartRodCharge",
-            RodThrow = "Eclipse Katana - RodThrow",
-            ReelStart = "Eclipse Katana - ReelStart",
-            ReelingIdle = "Eclipse Katana - ReelingIdle",
-            ReelIntermission = "Eclipse Katana - ReelIntermission",
-            FishCaught = "Eclipse Katana - FishCaught",
-            EquipIdle = "Eclipse Katana - EquipIdle",
-        },
-
-        ["Corruption Edge"] = {
-            StartRodCharge = "Corruption Edge - StartRodCharge",
-            RodThrow = "Corruption Edge - RodThrow",
-            ReelStart = "Corruption Edge - ReelStart",
-            ReelingIdle = "Corruption Edge - ReelingIdle",
-            ReelIntermission = "Corruption Edge - ReelIntermission",
-            FishCaught = "Corruption Edge - FishCaught",
-            EquipIdle = "Corruption Edge - EquipIdle",
-        },
-
-        ["Christmas Parasol"] = {
-            StartRodCharge = "Christmas Parasol - StartRodCharge",
-            RodThrow = "Christmas Parasol - RodThrow",
-            ReelStart = "Christmas Parasol - ReelStart",
-            ReelingIdle = "Christmas Parasol - ReelingIdle",
-            ReelIntermission = "Christmas Parasol - ReelIntermission",
-            FishCaught = "Christmas Parasol - FishCaught",
-            EquipIdle = "Christmas Parasol - EquipIdle",
-        },
-
-        ["Blackhole Sword"] = {
-            StartRodCharge = "Blackhole Sword - StartRodCharge",
-            RodThrow = "Blackhole Sword - RodThrow",
-            ReelStart = "Blackhole Sword - ReelStart",
-            ReelingIdle = "Blackhole Sword - ReelingIdle",
-            ReelIntermission = "Blackhole Sword - ReelIntermission",
-            FishCaught = "Blackhole Sword - FishCaught",
-            EquipIdle = "Blackhole Sword - EquipIdle",
-        },
-
-        ["Eternal Flower"] = {
-            StartRodCharge = "Eternal Flower - StartRodCharge",
-            RodThrow = "Eternal Flower - RodThrow",
-            ReelStart = "Eternal Flower - ReelStart",
-            ReelingIdle = "Eternal Flower - ReelingIdle",
-            ReelIntermission = "Eternal Flower - ReelIntermission",
-            FishCaught = "Eternal Flower - FishCaught",
-            EquipIdle = "Eternal Flower - EquipIdle",
-        },
-
-        ["Binary Edge"] = {
-            StartRodCharge = "Binary Edge - StartRodCharge",
-            RodThrow = "Binary Edge - RodThrow",
-            ReelStart = "Binary Edge - ReelStart",
-            ReelingIdle = "Binary Edge - ReelingIdle",
-            ReelIntermission = "Binary Edge - ReelIntermission",
-            FishCaught = "Binary Edge - FishCaught",
-            EquipIdle = "Binary Edge - EquipIdle",
-        },
-
-        ["1x1x1x1 Ban Hammer"] = {
-            StartRodCharge = "1x1x1x1 Ban Hammer - StartRodCharge",
-            RodThrow = "1x1x1x1 Ban Hammer - RodThrow",
-            ReelStart = "1x1x1x1 Ban Hammer - ReelStart",
-            ReelingIdle = "1x1x1x1 Ban Hammer - ReelingIdle",
-            ReelIntermission = "1x1x1x1 Ban Hammer - ReelIntermission",
-            FishCaught = "1x1x1x1 Ban Hammer - FishCaught",
-            EquipIdle = "1x1x1x1 Ban Hammer - EquipIdle",
-        },
-        ["Ethereal Sword"] = {
-            StartRodCharge = "Ethereal Sword - StartRodCharge",
-            RodThrow = "Ethereal Sword - RodThrow",
-            ReelStart = "Ethereal Sword - ReelStart",
-            ReelingIdle = "Ethereal Sword - ReelingIdle",
-            ReelIntermission = "Ethereal Sword - ReelIntermission",
-            FishCaught = "Ethereal Sword - FishCaught",
-            EquipIdle = "Ethereal Sword - EquipIdle",
-        },
-    },
+    Character099 = nil,
+    Humanoid099 = nil,
+    Animator099 = nil,
+    AnimationInstance099 = nil,
 
     -- ================== [Auto Reconnect] ==================             
 
@@ -1011,6 +811,40 @@ local GameData = {
     AutoReconnect = false,
 
     Connections = {},
+
+    -- ================== [Christmas Presents] ==================
+
+    Servicesv2 = {
+        ReplicatedStoragev2 = game:GetService("ReplicatedStorage"),
+    },
+
+    Packagesv2 = nil,
+    Indexv2 = nil,
+    NetPackagev2 = nil,
+    Netv2 = nil,
+    Remotev2 = nil,
+    NpcFolderv2 = nil,
+
+    AutoChristmasv2 = false,
+    AutoThreadv2 = nil,
+
+    -- ================== [Christmas Doors] ==================
+
+    Servicesv1 = {
+        ReplicatedStoragev1 = game:GetService("ReplicatedStorage"),
+        Workspacev1 = game:GetService("Workspace"),
+    },
+
+    ChristmasDoorsv1 = nil,
+
+    Packagesv1 = nil,
+    Indexv1 = nil,
+    NetPackagev1 = nil,
+    Netv1 = nil,
+    NetEventv1 = nil,
+
+    AutoPresentChristmasDoorv1 = false,
+    AutoThreadv1 = nil,
 
     -- ================== [Costumisasi Player] ==================
 
@@ -1085,64 +919,98 @@ local GameData = {
         "fuck","shit","bitch","asshole","dick","pussy"
     },
 
+    -- ================== [Auto Event Christmas Cave] ==================
+
+    Servicesv6 = {
+        Playersv6 = game:GetService("Players"),
+    },
+
+    Playerv6 = game:GetService("Players").LocalPlayer,
+    Characterv6 = nil,
+    HRPv6 = nil,
+    NewCharacterv6 = nil,
+    NewHRPv6 = nil,
+
+    EventHoursv6 = {
+        [1]=true,[3]=true,[5]=true,[7]=true,[9]=true,
+        [11]=true,[13]=true,[15]=true,[17]=true,
+        [19]=true,[21]=true,[23]=true
+    },
+
+    EventCFramev6 = CFrame.new(
+        565.414368, -503.543457, 8881.04492,
+        0.997363448, -1.51150346e-08, 0.0725680739,
+        1.49435646e-08, 1, 2.90581958e-09,
+        -0.0725680739, -1.81373261e-09, 0.997363448
+    ),
+
+    AutoEventEnabledv6 = false,
+    Teleportedv6 = false,
+    KeepTeleportingv6 = false,
+    EventEndTimev6 = 0,
+    OriginalCFramev6 = CFrame.new(),
+
+    TimeNowv6 = 0,
+    TimeTablev6 = {},
 
    -- ================== [Auto Join Event] ==================
 
-    Playersv28 = game:GetService("Players"),
-    RunServicev28 = game:GetService("RunService"),
-    TweenServicev28 = game:GetService("TweenService"),
-
-    Playerv28 = game:GetService("Players").LocalPlayer,
-
-    HuntListv28 = {
-        "Ghost Shark Hunt",
-        "Megalodon Hunt",
-        "Worm Hunt",
-        "Shark Hunt",
+    -- SERVICES
+    Services = {
+        Players = game:GetService("Players"),
+        RunService = game:GetService("RunService"),
     },
 
-    SelectedHuntsv28 = {},
-    Activev28 = false,
-    CurrentHuntv28 = nil,
-    SavedCFramev28 = nil,
+    -- PLAYER / CHARACTER
+    Player = game:GetService("Players").LocalPlayer,
+    Character = nil,
+    HRP = nil,
 
-    BVv28 = nil,
-    BGv28 = nil,
+    -- EVENT HUB
+    EventHub = {
+        ["Megalodon Hunt"] = "Megalodon Hunt",
+        ["Worm Hunt"] = "Model",
+        ["Shark Hunt"] = "Shark Hunt",
+        ["Ghost Shark Hunt"] = "Ghost Shark Hunt"
+    },
 
-    HRPv28 = nil,
-    Propsv28 = nil,
-    Modelv28 = nil,
-    Targetv28 = nil,
-    TargetPosv28 = nil,
-    TeleportSuccessv28 = false,
-    Tweenv28 = nil,
-    PivotCFv28 = nil,
-    Descendantv28 = nil,
+    -- STATE
+    AutoJoinEvent = false,
+    SelectedEvents = {},
+
+    WatchingEvent = nil,
+    SavedCFrame = CFrame.new(),
+    CurrentPlatform = nil,
+    PlatformCFrame = CFrame.new(),
+    ProtectConnection = nil,
+
+    -- UI CACHE
+    EventOptions = {},
 
    -- ================== [Drone Camera] ==================
 
-	Servicesv28 = {
+	Services = {
 		Players = game:GetService("Players"),
 		UIS = game:GetService("UserInputService"),
 		RunService = game:GetService("RunService"),
 	},
 
-	Playerv28 = game:GetService("Players").LocalPlayer,
-	Camerasv28 = workspace.CurrentCamera,
+	Player = game:GetService("Players").LocalPlayer,
+	Camera = workspace.CurrentCamera,
 
-	Dronev28 = false,
-	Speedv28 = 1.4,
-	Sensitivityv28 = 0.3,
+	Drone = false,
+	Speed = 1.4,
+	Sensitivity = 0.3,
 
-	Yawv28 = 0,
-	Pitchv28 = 0,
-	MoveForwardv28 = 0,
-	MoveRightv28 = 0,
+	Yaw = 0,
+	Pitch = 0,
+	MoveForward = 0,
+	MoveRight = 0,
 
-	GUIsv28 = nil,
-	LeftFramev28 = nil,
+	GUI = nil,
+	LeftFrame = nil,
 
-	Buttonsv28 = {
+	Buttons = {
 		Forward = nil,
 		Back = nil,
 		Left = nil,
@@ -1306,191 +1174,24 @@ local GameData = {
 
     ReplicatedStoragev17 = game:GetService("ReplicatedStorage"),
     HttpServicev17 = game:GetService("HttpService"),
-
     Netv17 = nil,
     ReplionClientv17 = nil,
     ItemUtilityv17 = nil,
     DataReplionv17 = nil,
     FavoriteRemotev17 = nil,
-
     RATE = 0.06,
     LOOP_DELAY = 1,
-
     state = {
         selectedFish = {},
-        selectedMutations = {},
-
         autoFavorite = false,
         autoUnfavorite = false,
         stopFavorite = false,
         stopUnfavorite = false,
     },
-
     FishNameList = {},
     FishMap = {},
-
-    MutationNameList = {},
-    MutationMap = {},
-
     ItemsFolderv17 = nil,
-    VariantsFolderv17 = nil,
-	--================ Auto Open Pirate Chests ===============
-
-    PromptDelayv33 = 0.15,
-
-    PirateChestStoragev33 = workspace:FindFirstChild("PirateChestStorage"),
-
-	--================ No Animation ===============
-
-    ReplicatedStoragev22 = game:GetService("ReplicatedStorage"),
-
-    AnimationControllerv22 = nil,
-
-    AnimDisabledv22 = false,
-
-    OldPlayAnimationv22 = nil,
-    OldStopAnimationv22 = nil,
-
-	--================ Boost Cpu ===============
-
-    Playersv25 = game:GetService("Players"),
-    Lightingv25 = game:GetService("Lighting"),
-
-    Playerv25 = nil,
-    BoostRunningv25 = false,
-
-	--================ Anti Staf ===============
-
-
-	--================ Freeze Character ===============
-
-    Playersv26 = game:GetService("Players"),
-    UISv26 = game:GetService("UserInputService"),
-
-    Playerv26 = game:GetService("Players").LocalPlayer,
-
-    Freezev26 = false,
-
-    Characterv26 = nil,
-    Rootv26 = nil,
-
-    BVv26 = nil,
-    BGv26 = nil,
-
-    FreezeTogglev26 = nil,
-
-	--================ Black Screen ===============
-
-    Playersv27 = game:GetService("Players"),
-
-    Playerv27 = game:GetService("Players").LocalPlayer,
-
-    BlackGuiv27 = nil,
-    BlackFramev27 = nil,
-    AFKTextv27 = nil,
-
-    --================ Fish Quantity and Value Status ===============
-
-    ReplicatedStoragev30 = game:GetService("ReplicatedStorage"),
-    Clientv30 = nil,
-    ItemUtilityv30 = nil,
-    VendorUtilityv30 = nil,
-    Datav30 = nil,
-
-    FishQuantityv30 = nil,
-
-    PreviousInventoryv30 = {},
-
-    HistoryMissingCountv30 = 0,
-    HistoryMissingValuev30 = 0,
-
-    --================ Auto Save Posisi Player ===============
-
-    Playerv31 = game.Players.LocalPlayer,
-
-    FileNamev31 = "saveposition.txt",
-
-    Characterv31 = nil,
-    HRPv31 = nil,
-    Positionv31 = nil,
-
-    --================ Auto Tp To Save Position ===============
-
-    Playerv32 = game.Players.LocalPlayer,
-
-    FileNamev32 = "saveposition.txt",
-
-    RawDatav32 = nil,
-    Xv32 = nil,
-    Yv32 = nil,
-    Zv32 = nil,
-
-    Characterv32 = nil,
-    HRPv32 = nil,
-
-    --================ Hide Cutscene ===============
-
-    ReplicatedStoragev35 = game:GetService("ReplicatedStorage"),
-
-    Netv35 = nil,
-
-    StopCutsceneRemotev35 = nil,
-    PlayCutsceneRemotev35 = nil,
-
-    HideCutsceneEnabledv35 = false,
-    CutsceneConnectionv35 = nil,
 }
-
-    --================ Auto Save Posisi Player ===============
-
-if writefile and not isfile(GameData.FileNamev31) then
-    writefile(GameData.FileNamev31, "")
-end
-
-task.spawn(function()
-    while true do
-        task.wait(10)
-
-        GameData.Characterv31 = GameData.Playerv31.Character
-        GameData.HRPv31 = GameData.Characterv31
-            and GameData.Characterv31:FindFirstChild("HumanoidRootPart")
-
-        if GameData.HRPv31 then
-            GameData.Positionv31 = GameData.HRPv31.Position
-            writefile(
-                GameData.FileNamev31,
-                GameData.Positionv31.X .. "," ..
-                GameData.Positionv31.Y .. "," ..
-                GameData.Positionv31.Z
-            )
-        end
-    end
-end)
-
-    --================ Auto Tp To Save Position ===============
-
-if isfile(GameData.FileNamev32) then
-    GameData.RawDatav32 = readfile(GameData.FileNamev32)
-
-    GameData.Xv32, GameData.Yv32, GameData.Zv32 =
-        GameData.RawDatav32:match("([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)")
-
-    if GameData.Xv32 and GameData.Yv32 and GameData.Zv32 then
-        GameData.Characterv32 = GameData.Playerv32.Character
-        GameData.HRPv32 = GameData.Characterv32
-            and GameData.Characterv32:FindFirstChild("HumanoidRootPart")
-
-        if GameData.HRPv32 then
-            GameData.HRPv32.CFrame = CFrame.new(
-                tonumber(GameData.Xv32),
-                tonumber(GameData.Yv32),
-                tonumber(GameData.Zv32)
-            )
-        end
-    end
-end
-
---================ Wind Ui ===============
 
 local Window = WindUI:CreateWindow({
     Title = "NexaHub | Fish It!",
@@ -1522,14 +1223,14 @@ local Window = WindUI:CreateWindow({
 
 
 Window:Tag({
-    Title = "v0.2.0",
+    Title = "v0.0.8",
     Icon = "rocket",
     Color = Color3.fromHex("#1c1c1c"),
     Border = true,
 })
 
 Window:Tag({
-    Title = "Premium",
+    Title = "Freemium",
     Icon = "star",
     Color = Color3.fromHex("#1c1c1c"),
     Border = true,
@@ -1537,132 +1238,23 @@ Window:Tag({
 
 
 local Tabs = {
-    Home = Window:Tab({
-        Title = "Home",
-        Icon = "solar:home-2-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Main = Window:Tab({
-        Title = "Main",
-        Icon = "solar:home-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Backpack = Window:Tab({
-        Title = "Backpack",
-        Icon = "solar:backpack-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Event = Window:Tab({
-        Title = "Event",
-        Icon = "solar:calendar-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Quest = Window:Tab({
-        Title = "Quest",
-        Icon = "solar:document-text-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Trading = Window:Tab({
-        Title = "Trading",
-        Icon = "solar:hand-money-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Shop = Window:Tab({
-        Title = "Shop",
-        Icon = "solar:cart-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Boat = Window:Tab({
-        Title = "Boat",
-        Icon = "ship",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Tp = Window:Tab({
-        Title = "Teleport",
-        Icon = "solar:map-point-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Player = Window:Tab({
-        Title = "Player",
-        Icon = "solar:user-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
-
-    Config = Window:Tab({
-        Title = "Config",
-        Icon = "solar:settings-bold",
-        Locked = false,
-        ShowTabTitle = true,
-        Border = true,
-    }),
+    Home = Window:Tab({ Title = "Home", Icon = "circle-fading-plus" }),
+    Main = Window:Tab({ Title = "Main", Icon = "house" }),
+    Backpack = Window:Tab({ Title = "Backpack", Icon = "backpack" }),
+    Event = Window:Tab({ Title = "Event", Icon = "calendar" }),
+    Quest = Window:Tab({ Title = "Quest", Icon = "scroll-text" }),
+    Trading = Window:Tab({ Title = "Trading", Icon = "handshake" }),
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart" }),
+    Boat = Window:Tab({ Title = "Boat", Icon = "sailboat" }),
+    Tp = Window:Tab({ Title = "Teleport", Icon = "map-pin" }),
+    Player = Window:Tab({ Title = "Player", Icon = "user" }),
+    Config = Window:Tab({ Title = "Config", Icon = "folder" }),
 }
-
-Tabs.Home:Select()
-
-do
-    local DefaultConfig = {
-        TextXAlignment = "Center",
-
-        -- tambahan
-        TextTransparency = 0.05, -- title transparency (optional)
-        FontWeight = Enum.FontWeight.SemiBold, -- title font weight (optional)
-        DescFontWeight = Enum.FontWeight.Medium, -- description font weight (optional)
-    }
-
-    for name, tab in pairs(Tabs) do
-        if tab and type(tab.Section) == "function" then
-            local OldSection = tab.Section
-
-            function tab:Section(config)
-                config = config or {}
-
-                for k, v in pairs(DefaultConfig) do
-                    if config[k] == nil then
-                        config[k] = v
-                    end
-                end
-
-                return OldSection(self, config)
-            end
-        end
-    end
-end
-
 
 local Sec = {}
 
 local ConfigManager = Window.ConfigManager
-local AutoConfigName = "NexaHub_FishIt_Auto_V1"
-local AutoFeatureEnabled = false
+local ConfigName = "default"
 
 Sec.Home1 = Tabs.Home:Section({
     Title = "Update Log",
@@ -1676,9 +1268,8 @@ Sec.Home1 = Tabs.Home:Section({
 Sec.Home1:Paragraph({
     Title = "Update List",
     Desc = [[
-[+] Added Purchase Eclipse Rod & Seabreeze Rod
-[+] Added Bait & Rod now has a price list in the dropdown.
-[+] Added Custom Animation Ethereal Sword
+Tab Main:
+ [+] Added Blatant V2 (5 Notif)
 ]],
     Locked = false
 })
@@ -1771,6 +1362,171 @@ Sec.Home2:Button({
             Duration = 3,
             Icon = "gift"
         })
+    end
+})
+
+function GameData:GetRemotev2()
+    self.Packagesv2 = self.Servicesv2.ReplicatedStoragev2:FindFirstChild("Packages")
+    if not self.Packagesv2 then return end
+
+    self.Indexv2 = self.Packagesv2:FindFirstChild("_Index")
+    if not self.Indexv2 then return end
+
+    self.NetPackagev2 = self.Indexv2:FindFirstChild("sleitnick_net@0.2.0")
+    if not self.NetPackagev2 then return end
+
+    self.Netv2 = self.NetPackagev2:FindFirstChild("net")
+    if not self.Netv2 then return end
+
+    self.Remotev2 = self.Netv2:FindFirstChild("RF/SpecialDialogueEvent")
+    return self.Remotev2
+end
+
+function GameData:GetNpcFolderv2()
+    self.NpcFolderv2 = self.Servicesv2.ReplicatedStoragev2:FindFirstChild("NPC")
+    return self.NpcFolderv2
+end
+
+function GameData:StartAutoChristmassv2()
+    if self.AutoThreadv2 then return end
+
+    self.AutoThreadv2 = task.spawn(function()
+        while self.AutoChristmasv2 do
+
+            self:GetNpcFolderv2()
+            self:GetRemotev2()
+
+            if not self.NpcFolderv2 or not self.Remotev2 then
+                task.wait(1)
+            else
+                for _, npc in ipairs(self.NpcFolderv2:GetChildren()) do
+                    if not self.AutoChristmasv2 then break end
+
+                    if npc:IsA("Folder") or npc:IsA("Model") then
+                        pcall(function()
+                            self.Remotev2:InvokeServer(npc.Name, "ChristmasPresents")
+                        end)
+                        task.wait(0.3)
+                    end
+                end
+            end
+
+            task.wait(1)
+        end
+
+        self.AutoThreadv2 = nil
+    end)
+end
+
+function GameData:StopAutoChristmassv2()
+    self.AutoChristmasv2 = false
+    self.AutoThreadv2 = nil
+end
+
+Sec.Home2:Toggle({
+    Title = "Auto Christmas Presents",
+    Desc = "Automatically claim Christmas presents from NPC",
+    Value = false,
+
+    Callback = function(value)
+        GameData.AutoChristmasv2 = value
+
+        WindUI:Notify({
+            Title = "Christmas Presents",
+            Content = (value and "Enabled " or "Disabled ") .. "Auto Christmas Presents",
+            Duration = 3,
+            Icon = value and "gift" or "x"
+        })
+
+        if value then
+            GameData:StartAutoChristmassv2()
+        else
+            GameData:StopAutoChristmassv2()
+        end
+    end
+})
+
+function GameData:InitNetv1()
+    local success, err = pcall(function()
+        self.Packagesv1 = self.Servicesv1.ReplicatedStoragev1:FindFirstChild("Packages")
+        if not self.Packagesv1 then return end
+
+        self.Indexv1 = self.Packagesv1:FindFirstChild("_Index")
+        if not self.Indexv1 then return end
+
+        self.NetPackagev1 = self.Indexv1:FindFirstChild("sleitnick_net@0.2.0")
+        if not self.NetPackagev1 then return end
+
+        self.Netv1 = self.NetPackagev1:FindFirstChild("net")
+        if not self.Netv1 then return end
+
+        self.NetEventv1 = self.Netv1:FindFirstChild("RF/SpecialDialogueEvent")
+    end)
+    return success
+end
+
+function GameData:InitDoorsv1()
+    local success, err = pcall(function()
+        self.ChristmasDoorsv1 = self.Servicesv1.Workspacev1:FindFirstChild("ChristmasDoors")
+    end)
+    return success
+end
+
+function GameData:StartAutoPresentv1()
+    if self.AutoThreadv1 then return end
+
+    self:InitNetv1()
+    self:InitDoorsv1()
+
+    self.AutoThreadv1 = task.spawn(function()
+        while self.AutoPresentChristmasDoorv1 do
+            if not self.ChristmasDoorsv1 or not self.NetEventv1 then
+                task.wait(1)
+                continue
+            end
+
+            for _, door in pairs(self.ChristmasDoorsv1:GetChildren()) do
+                if not self.AutoPresentChristmasDoorv1 then break end
+
+                pcall(function()
+                    self.NetEventv1:InvokeServer(door.Name, "PresentChristmasDoor")
+                end)
+
+                task.wait(0.5)
+            end
+
+            task.wait(1)
+        end
+
+        self.AutoThreadv1 = nil
+    end)
+end
+
+function GameData:StopAutoPresentv1()
+    self.AutoPresentChristmasDoorv1 = false
+    self.AutoThreadv1 = nil
+end
+
+Sec.Home2:Toggle({
+    Title = "Auto Present Christmas Door",
+    Desc = "Automatically claim Christmas door presents",
+    Value = false,
+
+    Callback = function(value)
+        GameData.AutoPresentChristmasDoorv1 = value
+
+        WindUI:Notify({
+            Title = "Christmas Door",
+            Content = (value and "Enabled " or "Disabled ") .. "Auto Present Christmas Door",
+            Duration = 3,
+            Icon = value and "gift" or "x"
+        })
+
+        if value then
+            GameData:StartAutoPresentv1()
+        else
+            GameData:StopAutoPresentv1()
+        end
     end
 })
 
@@ -2011,229 +1767,82 @@ function GameData:CreateGuiv7()
     if self.Guiv7 then return end
 
     self.Guiv7 = Instance.new("ScreenGui")
-    self.Guiv7.Name = "NexaNetworkStatsV7"
+    self.Guiv7.Name = "NetworkStatsGuiv7"
     self.Guiv7.ResetOnSpawn = false
-    self.Guiv7.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     self.Guiv7.Parent = self.Playerv7:WaitForChild("PlayerGui")
 
-    -- Main Container
     self.MainFramev7 = Instance.new("Frame")
-    self.MainFramev7.Size = UDim2.new(0, 240, 0, 150)
+    self.MainFramev7.Size = UDim2.new(0, 200, 0, 90)
     self.MainFramev7.Position = UDim2.new(0, 20, 0, 20)
-    self.MainFramev7.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-    self.MainFramev7.BackgroundTransparency = 0.1
+    self.MainFramev7.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
     self.MainFramev7.BorderSizePixel = 0
     self.MainFramev7.Active = true
-    self.MainFramev7.Selectable = true
     self.MainFramev7.Parent = self.Guiv7
 
-    -- Outer Corner
-    local outerCorner = Instance.new("UICorner")
-    outerCorner.CornerRadius = UDim.new(0, 16)
-    outerCorner.Parent = self.MainFramev7
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 14)
+    corner.Parent = self.MainFramev7
 
-    -- Main Stroke
-    local mainStroke = Instance.new("UIStroke")
-    mainStroke.Color = Color3.fromRGB(60, 100, 200)
-    mainStroke.Thickness = 1.5
-    mainStroke.Transparency = 0.3
-    mainStroke.Parent = self.MainFramev7
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(60, 60, 60)
+    stroke.Thickness = 1
+    stroke.Parent = self.MainFramev7
 
-    -- Gradient Background
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 35)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 20, 30)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
     }
-    gradient.Rotation = 45
+    gradient.Rotation = 90
     gradient.Parent = self.MainFramev7
 
-    -- Glass Effect
-    local glassFrame = Instance.new("Frame")
-    glassFrame.Size = UDim2.new(1, 0, 1, 0)
-    glassFrame.BackgroundTransparency = 0.95
-    glassFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    glassFrame.BorderSizePixel = 0
-    glassFrame.Parent = self.MainFramev7
-
-    local glassCorner = Instance.new("UICorner")
-    glassCorner.CornerRadius = UDim.new(0, 16)
-    glassCorner.Parent = glassFrame
-
-    -- Inner Container
-    local innerFrame = Instance.new("Frame")
-    innerFrame.Size = UDim2.new(1, -20, 1, -20)
-    innerFrame.Position = UDim2.new(0, 10, 0, 10)
-    innerFrame.BackgroundTransparency = 1
-    innerFrame.Parent = self.MainFramev7
-
-    -- Title Bar
-    local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 36)
-    titleBar.BackgroundTransparency = 1
-    titleBar.Parent = innerFrame
-
-    -- Logo/Icon Owner di kiri (tanpa glow) - GANTI ASSET ID DENGAN LOGO ANDA
-    local ownerLogo = Instance.new("ImageLabel")
-    ownerLogo.Size = UDim2.new(0, 35, 0, 35)
-    ownerLogo.Position = UDim2.new(0, 3, 0.5, -19)
-    ownerLogo.BackgroundTransparency = 1
-    ownerLogo.Image = "rbxassetid://118079068036615" -- GANTI DENGAN ASSET ID LOGO OWNER ANDA
-    ownerLogo.ImageColor3 = Color3.fromRGB(255, 255, 255) -- Warna putih bersih
-    ownerLogo.ImageTransparency = 0 -- Tidak transparan
-    ownerLogo.ScaleType = Enum.ScaleType.Fit
-    ownerLogo.Parent = titleBar
-
-    -- Stroke halus untuk logo
-    local logoStroke = Instance.new("UIStroke")
-    logoStroke.Color = Color3.fromRGB(200, 200, 200)
-    logoStroke.Thickness = 0.8
-    logoStroke.Transparency = 0.2
-    logoStroke.Parent = ownerLogo
-
-    -- Icon Nexa Network (dipindah ke kanan sedikit)
-    local titleIcon = Instance.new("ImageLabel")
-    titleIcon.Size = UDim2.new(0, 20, 0, 20)
-    titleIcon.Position = UDim2.new(0, 25, 0.5, -10) -- Posisi X diubah dari 0 ke 25
-    titleIcon.BackgroundTransparency = 1
-    titleIcon.Image = "rbxassetid://12171505282"
-    titleIcon.ImageColor3 = Color3.fromRGB(100, 180, 255)
-    titleIcon.ImageTransparency = 0.2
-    titleIcon.Parent = titleBar
-
-    -- Title Text
+    -- Title
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -55, 1, 0) -- Lebar dikurangi dari 30 ke 55
-    title.Position = UDim2.new(0, 40, 0, 0) -- Posisi X diubah dari 28 ke 53
+    title.Size = UDim2.new(1, -12, 0, 20)
+    title.Position = UDim2.new(0, 6, 0, 4)
     title.BackgroundTransparency = 1
     title.Text = "NEXA X NETWORK PANEL"
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 14
+    title.TextSize = 12
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.TextColor3 = Color3.fromRGB(200, 220, 255)
-    title.Parent = titleBar
+    title.TextColor3 = Color3.fromRGB(170, 170, 170)
+    title.Parent = self.MainFramev7
 
-    -- Subtitle
-    local subtitle = Instance.new("TextLabel")
-    subtitle.Size = UDim2.new(1, -55, 0, 12) -- Lebar dikurangi dari 30 ke 55
-    subtitle.Position = UDim2.new(0, 56, 0, 20) -- Posisi X diubah dari 28 ke 53
-    subtitle.BackgroundTransparency = 1
-    subtitle.Text = "Real-time Performance Metrics"
-    subtitle.Font = Enum.Font.Gotham
-    subtitle.TextSize = 10
-    subtitle.TextXAlignment = Enum.TextXAlignment.Left
-    subtitle.TextColor3 = Color3.fromRGB(150, 170, 200)
-    subtitle.Parent = titleBar
+    -- Ping Text
+    self.PingTextv7 = Instance.new("TextLabel")
+    self.PingTextv7.Size = UDim2.new(1, -12, 0, 20)
+    self.PingTextv7.Position = UDim2.new(0, 6, 0, 28)
+    self.PingTextv7.BackgroundTransparency = 1
+    self.PingTextv7.Text = "Ping: -- ms"
+    self.PingTextv7.Font = Enum.Font.Gotham
+    self.PingTextv7.TextSize = 15
+    self.PingTextv7.TextXAlignment = Enum.TextXAlignment.Left
+    self.PingTextv7.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.PingTextv7.Parent = self.MainFramev7
 
-    -- Separator
-    local separator = Instance.new("Frame")
-    separator.Size = UDim2.new(1, 0, 0, 1)
-    separator.Position = UDim2.new(0, 0, 0, 38)
-    separator.BackgroundColor3 = Color3.fromRGB(60, 100, 200)
-    separator.BackgroundTransparency = 0.7
-    separator.BorderSizePixel = 0
-    separator.Parent = innerFrame
+    -- CPU Text (ms)
+    self.CpuTextv7 = Instance.new("TextLabel")
+    self.CpuTextv7.Size = UDim2.new(1, -12, 0, 20)
+    self.CpuTextv7.Position = UDim2.new(0, 6, 0, 50)
+    self.CpuTextv7.BackgroundTransparency = 1
+    self.CpuTextv7.Text = "CPU: -- ms"
+    self.CpuTextv7.Font = Enum.Font.Gotham
+    self.CpuTextv7.TextSize = 15
+    self.CpuTextv7.TextXAlignment = Enum.TextXAlignment.Left
+    self.CpuTextv7.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.CpuTextv7.Parent = self.MainFramev7
 
-    -- Stats Container
-    local statsContainer = Instance.new("Frame")
-    statsContainer.Size = UDim2.new(1, 0, 1, -45)
-    statsContainer.Position = UDim2.new(0, 0, 0, 45)
-    statsContainer.BackgroundTransparency = 1
-    statsContainer.Parent = innerFrame
-
-    -- Stat Item Template Function (DIPERBAIKI)
-    local function createStatItem(name, iconId, positionY)
-        local container = Instance.new("Frame")
-        container.Size = UDim2.new(1, 0, 0, 28)
-        container.Position = UDim2.new(0, 0, 0, positionY)
-        container.BackgroundTransparency = 1
-        container.Parent = statsContainer
-
-        local icon = Instance.new("ImageLabel")
-        icon.Size = UDim2.new(0, 20, 0, 20)
-        icon.Position = UDim2.new(0, 0, 0.5, -10)
-        icon.BackgroundTransparency = 1
-        icon.Image = "rbxassetid://" .. iconId
-        icon.ImageColor3 = Color3.fromRGB(180, 200, 255)
-        icon.Parent = container
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(0, 60, 1, 0)
-        label.Position = UDim2.new(0, 28, 0, 0)
-        label.BackgroundTransparency = 1
-        label.Text = name .. ":"
-        label.Font = Enum.Font.GothamSemibold
-        label.TextSize = 12
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.TextColor3 = Color3.fromRGB(180, 200, 220)
-        label.Parent = container
-
-        -- PERBAIKAN: Lebar valueFrame diperbesar
-        local valueFrame = Instance.new("Frame")
-        valueFrame.Size = UDim2.new(0, 135, 0, 24) -- DARI 120 KE 135
-        valueFrame.Position = UDim2.new(1, -139, 0.5, -12) -- SESUAIKAN POSISI
-        valueFrame.BackgroundColor3 = Color3.fromRGB(10, 15, 25)
-        valueFrame.BackgroundTransparency = 0.8
-        valueFrame.BorderSizePixel = 0
-        valueFrame.Parent = container
-
-        local valueCorner = Instance.new("UICorner")
-        valueCorner.CornerRadius = UDim.new(0, 8)
-        valueCorner.Parent = valueFrame
-
-        local valueStroke = Instance.new("UIStroke")
-        valueStroke.Color = Color3.fromRGB(40, 80, 160)
-        valueStroke.Thickness = 1
-        valueStroke.Transparency = 0.5
-        valueStroke.Parent = valueFrame
-
-        -- PERBAIKAN: Padding teks disesuaikan
-        local valueText = Instance.new("TextLabel")
-        valueText.Size = UDim2.new(1, -12, 1, 0) -- DARI -8 KE -12
-        valueText.Position = UDim2.new(0, 6, 0, 0) -- DARI 4 KE 6
-        valueText.BackgroundTransparency = 1
-        valueText.Text = "--"
-        valueText.Font = Enum.Font.GothamBold
-        valueText.TextSize = 13
-        valueText.TextXAlignment = Enum.TextXAlignment.Left
-        valueText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        valueText.TextTruncate = Enum.TextTruncate.AtEnd -- Tambah truncate
-        valueText.Parent = valueFrame
-
-        return valueText
-    end
-
-    -- Create Stat Items
-    self.PingTextv7 = createStatItem("PING", "140088536295002", 0) -- Network icon
-    self.CpuTextv7 = createStatItem("CPU", "104660079852389", 32) -- CPU icon
-    self.FpsTextv7 = createStatItem("FPS", "133224545848420", 64) -- Speedometer icon
-
-    -- Status Indicator
-    local statusBar = Instance.new("Frame")
-    statusBar.Size = UDim2.new(0, 6, 1, -10)
-    statusBar.Position = UDim2.new(1, -8, 0, 5)
-    statusBar.BackgroundColor3 = Color3.fromRGB(0, 220, 120)
-    statusBar.BorderSizePixel = 0
-    statusBar.Parent = statsContainer
-
-    local statusCorner = Instance.new("UICorner")
-    statusCorner.CornerRadius = UDim.new(0, 3)
-    statusCorner.Parent = statusBar
-
-    self.StatusBar = statusBar
-
-    -- Glow Effect (untuk panel utama, bukan untuk logo)
-    local glow = Instance.new("ImageLabel")
-    glow.Size = UDim2.new(1.5, 0, 1.5, 0)
-    glow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    glow.AnchorPoint = Vector2.new(0.5, 0.5)
-    glow.BackgroundTransparency = 1
-    glow.Image = "rbxassetid://12171505282"
-    glow.ImageColor3 = Color3.fromRGB(0, 100, 255)
-    glow.ImageTransparency = 0.9
-    glow.ZIndex = 0
-    glow.Parent = self.MainFramev7
+    -- FPS Text
+    self.FpsTextv7 = Instance.new("TextLabel")
+    self.FpsTextv7.Size = UDim2.new(1, -12, 0, 20)
+    self.FpsTextv7.Position = UDim2.new(0, 6, 0, 72)
+    self.FpsTextv7.BackgroundTransparency = 1
+    self.FpsTextv7.Text = "FPS: --"
+    self.FpsTextv7.Font = Enum.Font.Gotham
+    self.FpsTextv7.TextSize = 15
+    self.FpsTextv7.TextXAlignment = Enum.TextXAlignment.Left
+    self.FpsTextv7.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.FpsTextv7.Parent = self.MainFramev7
 
     -- Drag support for mouse & touch
     self.MainFramev7.InputBegan:Connect(function(input)
@@ -2244,24 +1853,11 @@ function GameData:CreateGuiv7()
             self.DragStartv7 = input.Position
             self.StartPosv7 = self.MainFramev7.Position
 
-            -- Animation feedback
-            self.Servicesv7.TweenServicev7:Create(
-                self.MainFramev7,
-                TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {BackgroundTransparency = 0.2}
-            ):Play()
-
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     if self.DragInputv7 == input then
                         self.Draggingv7 = false
                         self.DragInputv7 = nil
-                        
-                        self.Servicesv7.TweenServicev7:Create(
-                            self.MainFramev7,
-                            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                            {BackgroundTransparency = 0.1}
-                        ):Play()
                     end
                 end
             end)
@@ -2298,33 +1894,26 @@ function GameData:CreateGuiv7()
                 pingValue = math.floor(ping:GetValue())
             end
         end
-        
-        -- PERBAIKAN: Gunakan singkatan untuk menghemat ruang
-        local pingColor, pingStatus
-        if pingValue <= 50 then
-            pingColor = Color3.fromRGB(0, 220, 120)
-            pingStatus = "🟢" -- EXCELLENT -> EXC
-        elseif pingValue <= 100 then
-            pingColor = Color3.fromRGB(100, 220, 255)
-            pingStatus = "🟢"
-        elseif pingValue <= 200 then
-            pingColor = Color3.fromRGB(255, 190, 60)
-            pingStatus = "🟡"
+        self.PingTextv7.Text = "Ping: "..pingValue.." ms"
+
+        local pingColorv7
+        if pingValue <= 80 then
+            pingColorv7 = Color3.fromRGB(0,220,120)
+        elseif pingValue <= 150 then
+            pingColorv7 = Color3.fromRGB(255,190,60)
         else
-            pingColor = Color3.fromRGB(255, 80, 80)
-            pingStatus = "🔴"
+            pingColorv7 = Color3.fromRGB(255,80,80)
         end
-        
-        self.PingTextv7.Text = string.format("%d ms • %s", pingValue, pingStatus)
+
         self.Servicesv7.TweenServicev7:Create(
             self.PingTextv7,
             TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {TextColor3 = pingColor}
+            {TextColor3 = pingColorv7}
         ):Play()
 
         -- CPU ms
         local perf = self.Servicesv7.Statsv7:FindFirstChild("PerformanceStats")
-        local cpuMs = self.CPU_MSv7
+        local cpuMs = 0
         if perf then
             local cpu = perf:FindFirstChild("CPU")
             if cpu then
@@ -2332,69 +1921,46 @@ function GameData:CreateGuiv7()
                 self.CPU_MSv7 = cpuMs
             end
         end
-        
-        -- PERBAIKAN: Gunakan singkatan untuk menghemat ruang
-        local cpuColor, cpuStatus
+        self.CpuTextv7.Text = string.format("CPU: %.2f ms", cpuMs)
+
+        local cpuColorv7
         if cpuMs <= 5 then
-            cpuColor = Color3.fromRGB(0, 220, 120)
-            cpuStatus = "🟢" -- OPTIMAL -> OPT
+            cpuColorv7 = Color3.fromRGB(0,220,120)
         elseif cpuMs <= 10 then
-            cpuColor = Color3.fromRGB(100, 220, 255)
-            cpuStatus = "🟢"
-        elseif cpuMs <= 20 then
-            cpuColor = Color3.fromRGB(255, 190, 60)
-            cpuStatus = "🟡" -- MODERATE -> MOD
+            cpuColorv7 = Color3.fromRGB(255,190,60)
         else
-            cpuColor = Color3.fromRGB(255, 80, 80)
-            cpuStatus = "🔴" -- HIGH LOAD -> HIGH
+            cpuColorv7 = Color3.fromRGB(255,80,80)
         end
-        
-        self.CpuTextv7.Text = string.format("%.1f ms • %s", cpuMs, cpuStatus)
+
         self.Servicesv7.TweenServicev7:Create(
             self.CpuTextv7,
             TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {TextColor3 = cpuColor}
+            {TextColor3 = cpuColorv7}
         ):Play()
 
         -- FPS
         self._frameCountv7 = self._frameCountv7 + 1
         local currentTick = tick()
-        if currentTick - self._lastTickv7 >= 0.5 then
-            self._fpsv7 = math.floor(self._frameCountv7 * 2)
+        if currentTick - self._lastTickv7 >= 1 then
+            self._fpsv7 = self._frameCountv7
             self._frameCountv7 = 0
             self._lastTickv7 = currentTick
 
-            -- PERBAIKAN: Gunakan singkatan untuk menghemat ruang
-            local fpsColor, fpsStatus
-            if self._fpsv7 >= 120 then
-                fpsColor = Color3.fromRGB(0, 220, 120)
-                fpsStatus = "🟢" -- SMOOTH -> SMT
-            elseif self._fpsv7 >= 60 then
-                fpsColor = Color3.fromRGB(100, 220, 255)
-                fpsStatus = "🟢"
+            self.FpsTextv7.Text = "FPS: "..self._fpsv7
+
+            local fpsColorv7
+            if self._fpsv7 >= 60 then
+                fpsColorv7 = Color3.fromRGB(0,220,120)
             elseif self._fpsv7 >= 30 then
-                fpsColor = Color3.fromRGB(255, 190, 60)
-                fpsStatus = "🟡" -- PLAYABLE -> PLY
+                fpsColorv7 = Color3.fromRGB(255,190,60)
             else
-                fpsColor = Color3.fromRGB(255, 80, 80)
-                fpsStatus = "🔴" -- LAGGY -> LAG
+                fpsColorv7 = Color3.fromRGB(255,80,80)
             end
-            
-            self.FpsTextv7.Text = string.format("%d • %s", self._fpsv7, fpsStatus)
+
             self.Servicesv7.TweenServicev7:Create(
                 self.FpsTextv7,
                 TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {TextColor3 = fpsColor}
-            ):Play()
-            
-            -- Update status bar based on overall performance
-            local overallStatus = math.min(pingValue / 300, cpuMs / 20, (120 - math.min(self._fpsv7, 120)) / 120)
-            local statusColor = Color3.new(2 - overallStatus * 2, overallStatus * 2, 0)
-            
-            self.Servicesv7.TweenServicev7:Create(
-                self.StatusBar,
-                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {BackgroundColor3 = statusColor}
+                {TextColor3 = fpsColorv7}
             ):Play()
         end
     end)
@@ -2413,14 +1979,14 @@ function GameData:RemoveGuiv7()
         self.PingTextv7 = nil
         self.CpuTextv7 = nil
         self.FpsTextv7 = nil
-        self.StatusBar = nil
     end
 end
 
+-- Toggle (sesuaikan dengan sistem toggle mu)
 Sec.Main1:Toggle({
     Title = "Show Network Stats",
     Flag = "Show Network Stats",
-    Desc = "Display advanced network panel with real-time metrics",
+    Desc = "Display ping, CPU (ms), and FPS panel",
     Value = false,
 
     Callback = function(value)
@@ -2430,41 +1996,13 @@ Sec.Main1:Toggle({
             GameData:RemoveGuiv7()
         end
 
-        -- Notifikasi jika library Anda mendukung
-        if WindUI and WindUI.Notify then
-            WindUI:Notify({
-                Title = "Network Stats",
-                Content = value and "Panel Enabled • Monitoring Active" or "Panel Disabled",
-                Duration = 3,
-                Icon = "activity"
-            })
-        end
+        WindUI:Notify({
+            Title = "Network Stats v7",
+            Content = value and "Enabled" or "Disabled",
+            Duration = 3,
+            Icon = "activity"
+        })
     end
-})
-
-GameData.CancelFishingv9 =
-	GameData.Servicesv9.ReplicatedStoragev9
-		:WaitForChild("Packages")
-		:WaitForChild("_Index")
-		:WaitForChild("sleitnick_net@0.2.0")
-		:WaitForChild("net")
-		:WaitForChild("RF/CancelFishingInputs")
-
-Sec.Main1:Button({
-	Title = "Cancel Fishing",
-	Locked = false,
-	Callback = function()
-		pcall(function()
-			GameData.CancelFishingv9:InvokeServer()
-		end)
-	end
-})
-
-Sec.Main9 = Tabs.Main:Section({
-    Title = "Skip Rarity",
-    Box = true,
-    BoxBorder = true,
-    Opened = false,
 })
 
 _G.RarityFilterEnabled = false
@@ -2478,7 +2016,7 @@ GameData.RE_TextEffect = GameData.net:WaitForChild("RE/ReplicateTextEffect")
 
 _G.BlacklistedRarity = _G.BlacklistedRarity or {}
 
-Sec.Main9:Dropdown({
+Sec.Main1:Dropdown({
     Title = "Skip Rarity List",
     Flag = "Skip Rarity List",
     Desc = "Select rarities to skip",
@@ -2498,7 +2036,7 @@ Sec.Main9:Dropdown({
     end
 })
 
-Sec.Main9:Toggle({
+Sec.Main1:Toggle({
     Title = "Skip Rarity",
     Flag = "Skip Rarity",
     Desc = "Skip selected fish rarities",
@@ -2565,195 +2103,24 @@ GameData.RE_TextEffect.OnClientEvent:Connect(function(data)
     end
 end)
 
-Sec.Main7 = Tabs.Main:Section({
-    Title = "Perfect Fishing",
-    Box = true,
-    BoxBorder = true,
-    Opened = false,
+GameData.CancelFishingv9 =
+	GameData.Servicesv9.ReplicatedStoragev9
+		:WaitForChild("Packages")
+		:WaitForChild("_Index")
+		:WaitForChild("sleitnick_net@0.2.0")
+		:WaitForChild("net")
+		:WaitForChild("RF/CancelFishingInputs")
+
+Sec.Main1:Button({
+	Title = "Cancel Fishing",
+	Locked = false,
+	Callback = function()
+		pcall(function()
+			GameData.CancelFishingv9:InvokeServer()
+		end)
+	end
 })
 
-GameData.LocalPlayer = GameData.Players.LocalPlayer
-
---// ================= INIT NET =================
-GameData.Net = GameData.ReplicatedStorage
-    :WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-
---// ================= INIT REMOTES =================
-GameData.RFRequestFishingMinigameStarted =
-    GameData.Net:WaitForChild("RF/RequestFishingMinigameStarted")
-
-GameData.REReplicateTextEffect =
-    GameData.Net:WaitForChild("RE/ReplicateTextEffect")
-
-GameData.REFishingCompleted =
-    GameData.Net:WaitForChild("RE/FishingCompleted")
-
-GameData.REPlayFishingEffect =
-    GameData.Net:WaitForChild("RE/PlayFishingEffect")
-
-GameData.RFCancelFishingInputs =
-    GameData.Net:WaitForChild("RF/CancelFishingInputs")
-
---// ================= BASE LUCK UI =================
-GameData.BaseLuckLabel =
-    GameData.LocalPlayer.PlayerGui
-        :WaitForChild("Charge")
-        .Main.Frame.Top:WaitForChild("BaseLuck")
-
-function GameData.CheckBaseLuck()
-    local text = GameData.BaseLuckLabel.Text
-    local luck = tonumber(text:match("x([%d%.]+)"))
-
-    if luck and luck >= 1.9 then
-        GameData.BaseLuckX2 = true
-    else
-        GameData.BaseLuckX2 = false
-        GameData.FiredMinigame = false
-    end
-end
-
-GameData.CheckBaseLuck()
-GameData.BaseLuckLabel:GetPropertyChangedSignal("Text"):Connect(function()
-    GameData.CheckBaseLuck()
-end)
-
---// ================= GET MODULES =================
-for _, v in pairs(getgc(true)) do
-    if type(v) == "table" then
-        if rawget(v, "_getPower") then
-            GameData.FishingModule = v
-        end
-        if rawget(v, "RequestChargeFishingRod") then
-            GameData.ChargeModule = v
-        end
-    end
-end
-
---// ================= AUTO FISH LOOP =================
-task.spawn(function()
-    while task.wait(0) do
-        if not GameData.AutoFishing then
-            continue
-        end
-
-        -- START CHARGE
-        if GameData.ChargeModule and not _G.confirmFishingInput then
-            local center = Vector2.new(
-                GameData.Camera.ViewportSize.X / 2,
-                GameData.Camera.ViewportSize.Y / 2
-            )
-
-            GameData.ChargeModule:RequestChargeFishingRod(center)
-        end
-
-        -- FORCE MINIGAME (x2 LUCK)
-        if GameData.BaseLuckX2
-        and not GameData.FiredMinigame
-        and GameData.FishingModule then
-
-            GameData.FiredMinigame = true
-
-            local power = GameData.FishingModule:_getPower()
-            local serverTime = workspace:GetServerTimeNow()
-
-            local hrp =
-                GameData.LocalPlayer.Character
-                and GameData.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-
-            local hitY = hrp and hrp.Position.Y or 0
-
-            pcall(function()
-                GameData.RFRequestFishingMinigameStarted:InvokeServer(
-                    hitY,
-                    power,
-                    serverTime
-                )
-            end)
-        end
-    end
-end)
-
---// ================= AUTO COMPLETE =================
-GameData.REReplicateTextEffect.OnClientEvent:Connect(function(data)
-    if not GameData.AutoFishing then
-        return
-    end
-
-    if not data or not data.TextData then
-        return
-    end
-
-    if data.TextData.EffectType ~= "Exclaim" then
-        return
-    end
-
-    local character = GameData.LocalPlayer.Character
-    if not character then
-        return
-    end
-
-    if data.Container ~= character:FindFirstChild("Head") then
-        return
-    end
-
-    task.delay(GameData.CompletedDelay, function()
-        if GameData.AutoFishing then
-            pcall(function()
-                GameData.REFishingCompleted:FireServer()
-            end)
-        end
-    end)
-end)
-
---// ================= CANCEL INPUT (INDEX 1–4) =================
-GameData.REPlayFishingEffect.OnClientEvent:Connect(function(plr, head, index)
-
-    -- 🔒 HARD STOP JIKA TOGGLE OFF
-    if not GameData.AutoFishing then
-        return
-    end
-
-    -- pastikan event untuk karakter kita
-    if plr ~= GameData.LocalPlayer then
-        return
-    end
-
-    -- hanya index 1–4
-    if index >= 1 and index <= 4 then
-        task.delay(0.1, function()
-            if GameData.AutoFishing then
-                pcall(function()
-                    GameData.RFCancelFishingInputs:InvokeServer()
-                end)
-            end
-        end)
-    end
-end)
-
---// ================= UI =================
-Sec.Main7:Input({
-    Title = "Completed Delay",
-    Value = tostring(GameData.CompletedDelay),
-    InputIcon = "timer",
-    Placeholder = "1.5",
-    Callback = function(input)
-        local num = tonumber(input)
-        if num then
-            GameData.CompletedDelay = num
-        end
-    end
-})
-
-Sec.Main7:Toggle({
-    Title = "Auto Fishing",
-    Value = false,
-    Callback = function(state)
-        GameData.AutoFishing = state
-    end
-})
 Sec.Main2 = Tabs.Main:Section({
     Title = "Instant",
     Box = true,
@@ -2768,6 +2135,9 @@ GameData.REFishingCompleted = GameData.package["RE/FishingCompleted"]
 GameData.REFishCaught = GameData.package["RE/FishCaught"]
 GameData.CancelFishingInputs = GameData.package["RF/CancelFishingInputs"]
 
+-- ==========================================================
+-- SAFE WAIT
+-- ==========================================================
 local function SafeWait(t)
     local start = os.clock()
     while os.clock() - start < t do
@@ -2777,6 +2147,9 @@ local function SafeWait(t)
     return true
 end
 
+-- ==========================================================
+-- MAIN FISHING CYCLE
+-- ==========================================================
 local function StartFishingCycle()
     if not GameData.autoFishingEnabled or GameData.isFishing then return end
 
@@ -2789,6 +2162,9 @@ local function StartFishingCycle()
     GameData.RequestFishingMinigameStarted:InvokeServer(unpack(GameData.miniggameArgs))
 end
 
+-- ==========================================================
+-- ANTI-STUCK CHECKER (AUTO RESTART)
+-- ==========================================================
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -2811,6 +2187,9 @@ task.spawn(function()
     end
 end)
 
+-- ==========================================================
+-- REPLICATE TEXT EFFECT
+-- ==========================================================
 GameData.REReplicateTextEffect.OnClientEvent:Connect(function(data)
     if not GameData.autoFishingEnabled or not data or not data.TextData then return end
 
@@ -2826,6 +2205,9 @@ GameData.REReplicateTextEffect.OnClientEvent:Connect(function(data)
     end)
 end)
 
+-- ==========================================================
+-- FISH CAUGHT = RESTART
+-- ==========================================================
 GameData.REFishCaught.OnClientEvent:Connect(function(fishName, data)
     if not GameData.autoFishingEnabled then return end
 
@@ -2907,248 +2289,110 @@ Sec.Main3 = Tabs.Main:Section({
     Opened = false,
 })
 
-GameData.Playerv23 = GameData.Servicesv23.Playersv23.LocalPlayer
+GameData.Player099 = GameData.Services099.Players099.LocalPlayer
 
-GameData.REFishCaughtv23 =
-    GameData.Servicesv23.ReplicatedStoragev23
+-- Reference remote event
+GameData.REFishCaught099 =
+    GameData.Services099.ReplicatedStorage099
         .Packages._Index["sleitnick_net@0.2.0"]
         .net["RE/FishCaught"]
 
-GameData.AnimationsFolderv23 =
-    GameData.Servicesv23.ReplicatedStoragev23
-        :WaitForChild("Modules")
-        :WaitForChild("Animations")
+-- Animations folder
+GameData.AnimationsFolder099 = GameData.Services099.ReplicatedStorage099
+    :WaitForChild("Modules")
+    :WaitForChild("Animations")
 
-GameData.AnimationControllerv23 =
-    require(GameData.Servicesv23.ReplicatedStoragev23.Controllers.AnimationController)
+-- AnimationController
+GameData.AnimationController099 =
+    require(GameData.Services099.ReplicatedStorage099.Controllers.AnimationController)
 
-GameData.OldPlayAnimationv23 = GameData.AnimationControllerv23.PlayAnimation
-GameData.AnimationControllerv23.PlayAnimation = function(self, animName, ...)
-    if GameData.BlockGameAnimv23 then
+-- Override PlayAnimation
+GameData.OldPlayAnimation099 = GameData.AnimationController099.PlayAnimation
+GameData.AnimationController099.PlayAnimation = function(self, animName, ...)
+    if GameData.AnimDisabled099 then
         return
     end
-    return GameData.OldPlayAnimationv23(self, animName, ...)
+    return GameData.OldPlayAnimation099(self, animName, ...)
 end
 
-for _, anim in ipairs(GameData.AnimationsFolderv23:GetChildren()) do
-    if anim:IsA("Animation") then
-        if anim.Name:find("FishCaught") then
-            table.insert(GameData.FishCaughtListv23, anim.Name)
-            GameData.FishCaughtMapv23[anim.Name] = anim.AnimationId
-        elseif anim.Name:find("EquipIdle") then
-            table.insert(GameData.EquipIdleListv23, anim.Name)
-            GameData.EquipIdleMapv23[anim.Name] = anim.AnimationId
-        end
+-- Load animations
+for _, anim in ipairs(GameData.AnimationsFolder099:GetChildren()) do
+    if anim:IsA("Animation") and anim.Name:find("FishCaught") then
+        table.insert(GameData.AnimationList099, anim.Name)
+        GameData.AnimationMap099[anim.Name] = anim.AnimationId
     end
 end
 
-function GameData:GetAnimatorv23()
-    local char = self.Playerv23.Character or self.Playerv23.CharacterAdded:Wait()
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
+-- Function play fish caught animation
+function GameData:PlayFishCaught099()
+    if not self.AnimationEnabled099 then return end
+    if not self.SelectedAnimationId099 then return end
 
-    local animator = hum:FindFirstChildOfClass("Animator")
-    if not animator then
-        animator = Instance.new("Animator", hum)
-    end
-    return animator
-end
+    self.Character099 = self.Player099.Character or self.Player099.CharacterAdded:Wait()
+    if not self.Character099 then return end
 
-function GameData:PlayEquipIdlev23()
-    if not self.EquipIdleEnabledv23 then return end
-    if not self.SelectedEquipIdleIdv23 then return end
+    self.Humanoid099 = self.Character099:FindFirstChildOfClass("Humanoid")
+    if not self.Humanoid099 then return end
 
-    local animator = self:GetAnimatorv23()
-    if not animator then return end
-
-    if self.EquipIdleTrackv23 then
-        self.EquipIdleTrackv23:Stop()
-        self.EquipIdleTrackv23:Destroy()
+    self.Animator099 = self.Humanoid099:FindFirstChildOfClass("Animator")
+    if not self.Animator099 then
+        self.Animator099 = Instance.new("Animator")
+        self.Animator099.Parent = self.Humanoid099
     end
 
-    local anim = Instance.new("Animation")
-    anim.AnimationId = self.SelectedEquipIdleIdv23
-
-    local track = animator:LoadAnimation(anim)
-    track.Looped = true
-    track.Priority = Enum.AnimationPriority.Idle
-    track:Play()
-
-    self.EquipIdleTrackv23 = track
-end
-
-function GameData:StopEquipIdleTempv23()
-    if self.EquipIdleTrackv23 then
-        self.EquipIdleTrackv23:Stop()
-    end
-end
-
-function GameData:PlayFishCaughtv23()
-    if not self.FishCaughtEnabledv23 then return end
-    if not self.SelectedFishCaughtIdv23 then return end
-
-    local animator = self:GetAnimatorv23()
-    if not animator then return end
-
-    self:StopEquipIdleTempv23()
-
-    if self.FishCaughtTrackv23 then
-        self.FishCaughtTrackv23:Stop()
-        self.FishCaughtTrackv23:Destroy()
+    if self.CurrentTrack099 then
+        self.CurrentTrack099:Stop()
+        self.CurrentTrack099:Destroy()
+        self.CurrentTrack099 = nil
     end
 
-    local anim = Instance.new("Animation")
-    anim.AnimationId = self.SelectedFishCaughtIdv23
+    self.AnimationInstance099 = Instance.new("Animation")
+    self.AnimationInstance099.AnimationId = self.SelectedAnimationId099
 
-    local track = animator:LoadAnimation(anim)
-    track.Priority = Enum.AnimationPriority.Action
-    track:Play()
-
-    self.FishCaughtTrackv23 = track
-
-    track.Stopped:Once(function()
-        task.delay(0.1, function()
-            GameData:PlayEquipIdlev23()
-        end)
-    end)
+    self.CurrentTrack099 = self.Animator099:LoadAnimation(self.AnimationInstance099)
+    self.CurrentTrack099:Play()
 end
 
-GameData.REFishCaughtv23.OnClientEvent:Connect(function()
-    GameData:PlayFishCaughtv23()
+-- Connect remote event
+GameData.REFishCaught099.OnClientEvent:Connect(function()
+    GameData:PlayFishCaught099()
 end)
 
 Sec.Main3:Dropdown({
-    Title = "FishCaught Animation V1",
-    Flag = "FishCaughtAnimV1",
-    SearchBarEnabled = true,
-    Values = GameData.FishCaughtListv23,
-    Callback = function(value)
-        GameData.SelectedFishCaughtIdv23 = GameData.FishCaughtMapv23[value]
-    end
-})
+    Title = "Select Animation",
+    Flag = "SelectAnimation",
+    Desc = "Choose animation to load",
+    Values = GameData.AnimationList099,
+    Value = "",
+    Multi = false,
+    AllowNone = true,
 
-Sec.Main3:Dropdown({
-    Title = "EquipIdle Animation V1",
-    Flag = "EquipIdleAnimV1",
-    SearchBarEnabled = true,
-    Values = GameData.EquipIdleListv23,
     Callback = function(value)
-        GameData.SelectedEquipIdleIdv23 = GameData.EquipIdleMapv23[value]
-        GameData:PlayEquipIdlev23()
+        GameData.SelectedAnimationId099 = GameData.AnimationMap099[value]
     end
 })
 
 Sec.Main3:Toggle({
-    Title = "Enable FishCaught V1",
-    Flag = "EnableFishCaughtV1",
+    Title = "Enable Animation",
+    Flag = "EnableAnimation",
+    Desc = "Enable / disable custom animation",
     Value = false,
+
     Callback = function(value)
-        GameData.FishCaughtEnabledv23 = value
-        GameData.BlockGameAnimv23 = value
+        GameData.AnimationEnabled099 = value
+        GameData.AnimDisabled099 = value
+
+        if not value and GameData.CurrentTrack099 then
+            GameData.CurrentTrack099:Stop()
+            GameData.CurrentTrack099:Destroy()
+            GameData.CurrentTrack099 = nil
+        end
 
         if value then
             pcall(function()
-                GameData.AnimationControllerv23:DestroyActiveAnimationTracks()
+                GameData.AnimationController099:DestroyActiveAnimationTracks()
             end)
         end
-    end
-})
-
-Sec.Main3:Toggle({
-    Title = "Enable EquipIdle V1",
-    Flag = "EnableEquipIdleV1",
-    Value = false,
-    Callback = function(value)
-        GameData.EquipIdleEnabledv23 = value
-        GameData.BlockGameAnimv23 = value
-
-        if not value and GameData.EquipIdleTrackv23 then
-            GameData.EquipIdleTrackv23:Stop()
-            GameData.EquipIdleTrackv23:Destroy()
-            GameData.EquipIdleTrackv23 = nil
-        end
-
-        if value then
-            GameData:PlayEquipIdlev23()
-        end
-    end
-})
-
-Sec.Main3:Space()
-
-for namev34, animv34 in pairs(GameData.Animationsv34) do
-    if typeof(animv34) == "Instance" then
-        GameData.AnimationBackupv34[namev34] = animv34
-    end
-end
-
-GameData.ApplyAnimationPresetv34 = function()
-    for namev34, animv34 in pairs(GameData.AnimationBackupv34) do
-        GameData.Animationsv34[namev34] = animv34
-    end
-
-    if not GameData.CustomAnimationEnabledv34 then
-        return
-    end
-
-    local presetv34 =
-        GameData.AnimationPresetsv34[GameData.SelectedAnimationWeaponv34]
-    if not presetv34 then return end
-
-    for defaultNamev34, overrideNamev34 in pairs(presetv34) do
-        if GameData.Animationsv34[overrideNamev34] then
-            GameData.Animationsv34[defaultNamev34] =
-                GameData.Animationsv34[overrideNamev34]
-        end
-    end
-end
-
-if typeof(GameData.Animationsv34.GetAnimation) == "function" then
-    GameData.Animationsv34.GetAnimation = function(_, namev34)
-        if not GameData.CustomAnimationEnabledv34 then
-            return GameData.Animationsv34[namev34]
-        end
-
-        local presetv34 =
-            GameData.AnimationPresetsv34[GameData.SelectedAnimationWeaponv34]
-
-        if presetv34 and presetv34[namev34]
-            and GameData.Animationsv34[presetv34[namev34]] then
-            return GameData.Animationsv34[presetv34[namev34]]
-        end
-
-        return GameData.Animationsv34[namev34]
-    end
-end
-
-ProtectCallback = _G.ProtectCallback
-
-Sec.Main3:Dropdown({
-    Title = "Custom Animation Weapon V2",
-    Flag = "CustomAnimationWeaponV2",
-    Values = {
-        "The Vanquisher","Soul Scythe","Princess Parasol","Oceanic Harpoon",
-        "Holy Trident","Gingerbread Katana","Frozen Krampus Scythe",
-        "Eternal Flower","Eclipse Katana","Corruption Edge","Christmas Parasol",
-        "Blackhole Sword","Binary Edge","1x1x1x1 Ban Hammer", "Ethereal Sword",
-    },
-    Value = "Holy Trident",
-    Callback = ProtectCallback and ProtectCallback(function(optionv34)
-        GameData.SelectedAnimationWeaponv34 = optionv34
-        GameData.ApplyAnimationPresetv34()
-    end) or function(optionv34)
-        GameData.SelectedAnimationWeaponv34 = optionv34
-        GameData.ApplyAnimationPresetv34()
-    end
-})
-
-Sec.Main3:Toggle({
-    Title = "Enable Custom Animations V2",
-    Flag = "EnableCustomAnimationsV2",
-    Value = false,
-    Callback = function(statev34)
-        GameData.CustomAnimationEnabledv34 = statev34
-        GameData.ApplyAnimationPresetv34()
     end
 })
 
@@ -3159,35 +2403,7 @@ Sec.Main4 = Tabs.Main:Section({
     Opened = true,
 })
 
-GameData.AnimationControllerv22 =
-    require(GameData.ReplicatedStoragev22.Controllers.AnimationController)
-
-GameData.OldPlayAnimationv22 = GameData.AnimationControllerv22.PlayAnimation
-GameData.OldStopAnimationv22 = GameData.AnimationControllerv22.StopAnimation
-
-GameData.AnimationControllerv22.PlayAnimation = function(self, animName, ...)
-    if GameData.AnimDisabledv22 then
-        return
-    end
-    return GameData.OldPlayAnimationv22(self, animName, ...)
-end
-
-Sec.Main4:Toggle({
-    Title = "No Animation",
-    Value = false,
-    Callback = function(state)
-        GameData.AnimDisabledv22 = state
-
-        if state then
-            pcall(function()
-                if GameData.AnimationControllerv22.DestroyActiveAnimationTracks then
-                    GameData.AnimationControllerv22:DestroyActiveAnimationTracks()
-                end
-            end)
-        end
-    end
-})
-
+-- SETUP NET
 GameData.net = GameData.SVC.RS.Packages._Index["sleitnick_net@0.2.0"]:WaitForChild("net")
 
 GameData.RF = {
@@ -3200,6 +2416,36 @@ GameData.RE = {
     FishingCompleted = GameData.net:WaitForChild("RE/FishingCompleted"),
     FishCaught = GameData.net:WaitForChild("RE/FishCaught")
 }
+
+-- CUTSCENE CONTROLLER
+do
+    local ok, controller = pcall(function()
+        return require(GameData.SVC.RS.Controllers.CutsceneController)
+    end)
+
+    if ok and controller then
+        GameData.cutsceneController = controller
+        GameData.originalPlay = controller.Play
+        GameData.originalStop = controller.Stop
+    end
+end
+
+-- ENABLE SKIP SYSTEM
+GameData.EnableSkip = function()
+    if GameData.cutsceneController then
+        if GameData.cutsceneController.ReplicateCutscene then
+            GameData.cutsceneController.ReplicateCutscene.OnClientEvent:Connect(function() end)
+        end
+        if GameData.cutsceneController.StopCutscene then
+            GameData.cutsceneController.StopCutscene.OnClientEvent:Connect(function() end)
+        end
+
+        GameData.cutsceneController.Play = function() end
+        GameData.cutsceneController.Stop = function() end
+    end
+end
+
+GameData.EnableSkip()
 
 -- GLOBAL CONFIG
 _G.BlatantV2 = false
@@ -3221,24 +2467,12 @@ end)
 GameData.Fastest = function()
     task.spawn(function()
         task.wait(_G.DelayCompleteV2)
-
-        pcall(function()
-            GameData.RF.CancelFishing:InvokeServer()
-        end)
-
-        pcall(function()
-            GameData.RF.ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-        end)
-
-        pcall(function()
-            GameData.RF.RequestFishingMinigameStarted:InvokeServer(-1, 0.999)
-        end)
+        pcall(function() GameData.RF.CancelFishing:InvokeServer() end)
+        pcall(function() GameData.RF.ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow()) end)
+        pcall(function() GameData.RF.RequestFishingMinigameStarted:InvokeServer(-1, 0.999) end)
 
         task.wait(_G.DelayCompleteV2)
-
-        pcall(function()
-            GameData.RE.FishingCompleted:FireServer()
-        end)
+        pcall(function() GameData.RE.FishingCompleted:FireServer() end)
     end)
 end
 
@@ -3252,10 +2486,23 @@ GameData.startBlatantV2 = function()
     end)
 end
 
--- UI
+Sec.Main4:Toggle({
+    Title = "Blatant v1",
+    Flag = "BlatantV1",
+    Value = _G.BlatantV2,
+
+    Callback = function(value)
+        _G.BlatantV2 = value
+        if value then
+            GameData.startBlatantV2()
+        end
+    end
+})
+
 Sec.Main4:Input({
-    Title = "Delay Cast V1",
-    Flag = "DelayCastV1",
+    Title = "Delay Cast v1",
+    Flag = "DelayCast",
+    Desc = "Set delay before casting (seconds)",
     Value = "1.78",
     InputIcon = "clock",
     Type = "Input",
@@ -3270,8 +2517,9 @@ Sec.Main4:Input({
 })
 
 Sec.Main4:Input({
-    Title = "Delay Complete V1",
-    Flag = "DelayCompleteV1",
+    Title = "Delay Complete v1",
+    Flag = "DelayComplete",
+    Desc = "Set delay after fishing completes (seconds)",
     Value = "0.7",
     InputIcon = "clock",
     Type = "Input",
@@ -3285,22 +2533,7 @@ Sec.Main4:Input({
     end
 })
 
-Sec.Main4:Toggle({
-    Title = "Blatant V1",
-    Flag = "BlatantV1",
-    Value = _G.BlatantV2,
-
-    Callback = function(value)
-        _G.BlatantV2 = value
-        if value then
-            GameData.startBlatantV2()
-        end
-    end
-})
-
 Sec.Main4:Space()
-
-GameData.LocalPlayerv19 = GameData.Playersv19.LocalPlayer
 
 GameData.NetFolderv19 = GameData.ReplicatedStoragev19
     :WaitForChild("Packages")
@@ -3308,23 +2541,12 @@ GameData.NetFolderv19 = GameData.ReplicatedStoragev19
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
 
-GameData.RF_ChargeFishingRodv19 =
-    GameData.NetFolderv19:WaitForChild("RF/ChargeFishingRod")
-
-GameData.RF_RequestMinigamev19 =
-    GameData.NetFolderv19:WaitForChild("RF/RequestFishingMinigameStarted")
-
-GameData.RF_CancelFishingInputsv19 =
-    GameData.NetFolderv19:WaitForChild("RF/CancelFishingInputs")
-
-GameData.RF_UpdateAutoFishingStatev19 =
-    GameData.NetFolderv19:WaitForChild("RF/UpdateAutoFishingState")
-
-GameData.RE_FishingCompletedv19 =
-    GameData.NetFolderv19:WaitForChild("RE/FishingCompleted")
-
-GameData.RE_MinigameChangedv19 =
-    GameData.NetFolderv19:WaitForChild("RE/FishingMinigameChanged")
+GameData.RF_ChargeFishingRodv19 = GameData.NetFolderv19:WaitForChild("RF/ChargeFishingRod")
+GameData.RF_RequestMinigamev19 = GameData.NetFolderv19:WaitForChild("RF/RequestFishingMinigameStarted")
+GameData.RF_CancelFishingInputsv19 = GameData.NetFolderv19:WaitForChild("RF/CancelFishingInputs")
+GameData.RF_UpdateAutoFishingStatev19 = GameData.NetFolderv19:WaitForChild("RF/UpdateAutoFishingState")
+GameData.RE_FishingCompletedv19 = GameData.NetFolderv19:WaitForChild("RE/FishingCompleted")
+GameData.RE_MinigameChangedv19 = GameData.NetFolderv19:WaitForChild("RE/FishingMinigameChanged")
 
 function GameData.ultraSpamLoopv19()
     while GameData.Activev19 do
@@ -3334,20 +2556,20 @@ function GameData.ultraSpamLoopv19()
             GameData.RF_ChargeFishingRodv19:InvokeServer({ [1] = startTime })
         end)
 
-        task.wait(GameData.Settingsv19.ChargeDelayv19)
+        task.wait(GameData.Settingsv19.ChargeDelay)
 
         local releaseTime = tick()
         GameData.safeFirev19(function()
             GameData.RF_RequestMinigamev19:InvokeServer(1, 0, releaseTime)
         end)
 
-        task.wait(GameData.Settingsv19.CompleteDelayv19)
+        task.wait(GameData.Settingsv19.CompleteDelay)
 
         GameData.safeFirev19(function()
             GameData.RE_FishingCompletedv19:FireServer()
         end)
 
-        task.wait(GameData.Settingsv19.CancelDelayv19)
+        task.wait(GameData.Settingsv19.CancelDelay)
 
         GameData.safeFirev19(function()
             GameData.RF_CancelFishingInputsv19:InvokeServer()
@@ -3359,13 +2581,13 @@ GameData.RE_MinigameChangedv19.OnClientEvent:Connect(function()
     if not GameData.Activev19 then return end
 
     task.spawn(function()
-        task.wait(GameData.Settingsv19.CompleteDelayv19)
+        task.wait(GameData.Settingsv19.CompleteDelay)
 
         GameData.safeFirev19(function()
             GameData.RE_FishingCompletedv19:FireServer()
         end)
 
-        task.wait(GameData.Settingsv19.CancelDelayv19)
+        task.wait(GameData.Settingsv19.CancelDelay)
 
         GameData.safeFirev19(function()
             GameData.RF_CancelFishingInputsv19:InvokeServer()
@@ -3375,23 +2597,16 @@ end)
 
 function GameData.UpdateSettingsv19(completeDelay, cancelDelay)
     if completeDelay ~= nil then
-        GameData.Settingsv19.CompleteDelayv19 = math.max(0, completeDelay)
+        GameData.Settingsv19.CompleteDelay = math.max(0, completeDelay)
     end
     if cancelDelay ~= nil then
-        GameData.Settingsv19.CancelDelayv19 = math.max(0, cancelDelay)
+        GameData.Settingsv19.CancelDelay = math.max(0, cancelDelay)
     end
 end
 
 function GameData.Startv19()
     if GameData.Activev19 then return end
     GameData.Activev19 = true
-
-    GameData.LocalPlayerv19:SetAttribute("Loading", nil)
-
-    GameData.safeFirev19(function()
-        GameData.RF_UpdateAutoFishingStatev19:InvokeServer(true)
-    end)
-
     task.spawn(GameData.ultraSpamLoopv19)
 end
 
@@ -3400,10 +2615,8 @@ function GameData.Stopv19()
     GameData.Activev19 = false
 
     GameData.safeFirev19(function()
-        GameData.RF_UpdateAutoFishingStatev19:InvokeServer(false)
+        GameData.RF_UpdateAutoFishingStatev19:InvokeServer(true)
     end)
-
-    GameData.LocalPlayerv19:SetAttribute("Loading", true)
 
     task.wait(0.2)
 
@@ -3414,31 +2627,35 @@ end
 
 Sec.Main4:Input({
     Title = "Complete Delay v2",
-    Flag = "Complete_Delay_v2",
-    Value = tostring(GameData.Settingsv19.CompleteDelayv19),
-    Callback = function(v)
-        local n = tonumber(v)
-        if n then
-            GameData.UpdateSettingsv19(n, nil)
+    Flag = "CompleteDelayv3",
+    Value = tostring(GameData.Settingsv19.CompleteDelay),
+    InputIcon = "clock",
+    Placeholder = "0.685",
+    Callback = function(input)
+        local value = tonumber(input)
+        if value then
+            GameData.UpdateSettingsv19(value, nil)
         end
     end
 })
 
 Sec.Main4:Input({
     Title = "Cancel Delay v2",
-    Flag = "Cancel_Delay_v2",
-    Value = tostring(GameData.Settingsv19.CancelDelayv19),
-    Callback = function(v)
-        local n = tonumber(v)
-        if n then
-            GameData.UpdateSettingsv19(nil, n)
+    Flag = "CancelDelayv3",
+    Value = tostring(GameData.Settingsv19.CancelDelay),
+    InputIcon = "clock",
+    Placeholder = "0.3",
+    Callback = function(input)
+        local value = tonumber(input)
+        if value then
+            GameData.UpdateSettingsv19(nil, value)
         end
     end
 })
 
 Sec.Main4:Toggle({
-    Title = "Blatant v2",
-    Flag = "Blatant_v2",
+    Title = "Blatant V2",
+    Flag = "BlatantV3",
     Value = false,
     Callback = function(state)
         if state then
@@ -3448,6 +2665,61 @@ Sec.Main4:Toggle({
         end
     end
 })
+
+local stopAnimConnections = {}
+
+local function setGameAnimationsEnabled(state)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        return
+    end
+
+    for _, conn in ipairs(stopAnimConnections) do
+        conn:Disconnect()
+    end
+    stopAnimConnections = {}
+
+    if state then
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if animator then
+            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                track:Stop(0)
+            end
+
+            local conn = animator.AnimationPlayed:Connect(function(track)
+                task.defer(function()
+                    track:Stop(0)
+                end)
+            end)
+            table.insert(stopAnimConnections, conn)
+        end
+    else
+        for _, conn in ipairs(stopAnimConnections) do
+            conn:Disconnect()
+        end
+        stopAnimConnections = {}
+    end
+
+    WindUI:Notify({
+        Title = "No Animation",
+        Content = state and "No Animation Enabled" or "No Animation Disabled",
+        Duration = 3,
+        Icon = "ban",
+    })
+end
+
+Sec.Main4:Toggle({
+    Title = "No Animation",
+    Desc = "Disable fishing animations",
+    Flag = "NoAnimation",
+    Value = false,
+    Callback = function(state)
+        setGameAnimationsEnabled(state)
+    end
+})
+
+Sec.Main4:Space()
 
 Sec.Main5 = Tabs.Main:Section({
     Title = "Webhook Notification",
@@ -3888,16 +3160,9 @@ Sec.Main6:Toggle({
 GameData.Netv17 = require(GameData.ReplicatedStoragev17.Packages.Net)
 GameData.ReplionClientv17 = require(GameData.ReplicatedStoragev17.Packages.Replion).Client
 GameData.ItemUtilityv17 = require(GameData.ReplicatedStoragev17.Shared.ItemUtility)
-
 GameData.DataReplionv17 = GameData.ReplionClientv17:WaitReplion("Data")
 GameData.FavoriteRemotev17 = GameData.Netv17:RemoteEvent("FavoriteItem")
-
 GameData.ItemsFolderv17 = GameData.ReplicatedStoragev17:WaitForChild("Items")
-GameData.VariantsFolderv17 = GameData.ReplicatedStoragev17:WaitForChild("Variants")
-
-local function isEmpty(t)
-    return not t or #t == 0
-end
 
 for _, module in ipairs(GameData.ItemsFolderv17:GetChildren()) do
     if module:IsA("ModuleScript") then
@@ -3911,58 +3176,8 @@ for _, module in ipairs(GameData.ItemsFolderv17:GetChildren()) do
         end
     end
 end
+
 table.sort(GameData.FishNameList)
-
-for _, module in ipairs(GameData.VariantsFolderv17:GetChildren()) do
-    if module:IsA("ModuleScript") then
-        local ok, data = pcall(require, module)
-        if ok and data and data.Data and data.Data.Name then
-            local name = data.Data.Name
-            if not GameData.MutationMap[name] then
-                GameData.MutationMap[name] = true
-                table.insert(GameData.MutationNameList, name)
-            end
-        end
-    end
-end
-table.sort(GameData.MutationNameList)
-
-local function matchFishAndMutation(item, fishName)
-    local fishEmpty = isEmpty(GameData.state.selectedFish)
-    local mutEmpty  = isEmpty(GameData.state.selectedMutations)
-
-    -- SAFETY: kalau dua-duanya kosong → jangan apa-apa
-    if fishEmpty and mutEmpty then
-        return false
-    end
-
-    -- FILTER FISH
-    if not fishEmpty and not table.find(GameData.state.selectedFish, fishName) then
-        return false
-    end
-
-    -- FILTER MUTATION
-    if not mutEmpty then
-        if not (item.Metadata and item.Metadata.VariantId) then
-            return false
-        end
-
-        local variantModule =
-            GameData.VariantsFolderv17:FindFirstChild(item.Metadata.VariantId)
-        if not variantModule then return false end
-
-        local okVar, varData = pcall(require, variantModule)
-        if not (okVar and varData and varData.Data) then
-            return false
-        end
-
-        if not table.find(GameData.state.selectedMutations, varData.Data.Name) then
-            return false
-        end
-    end
-
-    return true
-end
 
 local function workerFavorite()
     while GameData.state.autoFavorite do
@@ -3978,13 +3193,13 @@ local function workerFavorite()
                 local ok, data = pcall(function()
                     return GameData.ItemUtilityv17.GetItemDataFromItemType("Items", item.Id)
                 end)
-                if not (ok and data and data.Data and data.Data.Type == "Fish") then
-                    continue
-                end
 
-                if matchFishAndMutation(item, data.Data.Name) then
-                    GameData.FavoriteRemotev17:FireServer(item.UUID)
-                    task.wait(GameData.RATE)
+                if ok and data and data.Data and data.Data.Type == "Fish" then
+                    local fishName = data.Data.Name
+                    if table.find(GameData.state.selectedFish, fishName) then
+                        GameData.FavoriteRemotev17:FireServer(item.UUID)
+                        task.wait(GameData.RATE)
+                    end
                 end
             end
         end
@@ -4007,13 +3222,13 @@ local function workerUnfavorite()
                 local ok, data = pcall(function()
                     return GameData.ItemUtilityv17.GetItemDataFromItemType("Items", item.Id)
                 end)
-                if not (ok and data and data.Data and data.Data.Type == "Fish") then
-                    continue
-                end
 
-                if matchFishAndMutation(item, data.Data.Name) then
-                    GameData.FavoriteRemotev17:FireServer(item.UUID)
-                    task.wait(GameData.RATE)
+                if ok and data and data.Data and data.Data.Type == "Fish" then
+                    local fishName = data.Data.Name
+                    if table.find(GameData.state.selectedFish, fishName) then
+                        GameData.FavoriteRemotev17:FireServer(item.UUID)
+                        task.wait(GameData.RATE)
+                    end
                 end
             end
         end
@@ -4024,28 +3239,20 @@ end
 
 Sec.Main6:Dropdown({
     Title = "Select Fish",
+    Desc = "Favorite / Unfavorite Based on Fish Name",
     SearchBarEnabled = true,
     Values = GameData.FishNameList,
-    AllowNone = true,
+    Value = {},
     Multi = true,
-    Callback = function(v)
-        GameData.state.selectedFish = v or {}
-    end
-})
-
-Sec.Main6:Dropdown({
-    Title = "Select Mutation",
-    SearchBarEnabled = true,
-    Values = GameData.MutationNameList,
-    AllowNone = true,
-    Multi = true,
-    Callback = function(v)
-        GameData.state.selectedMutations = v or {}
+    AllowNone = false,
+    Callback = function(option)
+        GameData.state.selectedFish = option or {}
     end
 })
 
 Sec.Main6:Toggle({
     Title = "Favorite Fish",
+    Value = false,
     Callback = function(b)
         GameData.state.autoFavorite = b
         GameData.state.stopFavorite = not b
@@ -4060,6 +3267,7 @@ Sec.Main6:Toggle({
 
 Sec.Main6:Toggle({
     Title = "Unfavorite Fish",
+    Value = false,
     Callback = function(b)
         GameData.state.autoUnfavorite = b
         GameData.state.stopUnfavorite = not b
@@ -4071,7 +3279,6 @@ Sec.Main6:Toggle({
         end
     end
 })
-
 
 Sec.Main7 = Tabs.Main:Section({
     Title = "Enchant",
@@ -4139,7 +3346,6 @@ end)
 
 Sec.Main7:Dropdown({
     Title = "Target Enchant",
-    Flag = "TargetEnchant",
     Desc = "Automatically stop if this enchantment is obtained",
     SearchBarEnabled = true,
     Values = GameData.ALL_ENCHANT_NAMESv18,
@@ -4156,7 +3362,6 @@ Sec.Main7:Dropdown({
 
 Sec.Main7:Toggle({
     Title = "Auto Enchant",
-    Flag = "AutoEnchant",
     Value = false,
     Callback = function(state)
         GameData.AUTO_ENCHANTv18 = state
@@ -4168,7 +3373,6 @@ local args = {5}
 
 Sec.Main7:Toggle({
     Title = "Auto Equip Hotbar 5",
-    Flag = "AutoEquipHotbar5",
     Value = false,
     Callback = function(state)
         EquipLoop = state
@@ -4188,248 +3392,6 @@ Sec.Main7:Toggle({
                 end
             end)
         end
-    end
-})
-
-Sec.Main8 = Tabs.Main:Section({
-    Title = "Pirate",
-    Box = true,
-    BoxBorder = true,
-    Opened = false,
-})
-
-GameData.FirePromptv33 = function(prompt)
-    if prompt and prompt:IsA("ProximityPrompt") then
-        pcall(function()
-            fireproximityprompt(prompt)
-        end)
-        task.wait(GameData.PromptDelayv33)
-    end
-end
-
-GameData.OpenAllPirateChestsv33 = function()
-    if not GameData.PirateChestStoragev33 then
-        GameData.PirateChestStoragev33 = workspace:FindFirstChild("PirateChestStorage")
-        if not GameData.PirateChestStoragev33 then
-            return
-        end
-    end
-
-    local Openedv33 = 0
-
-    for _, modelv33 in ipairs(GameData.PirateChestStoragev33:GetChildren()) do
-        if modelv33:IsA("Model") then
-            local Coverv33 = modelv33:FindFirstChild("Cover")
-
-            if Coverv33 then
-                local Promptv33 =
-                    Coverv33:FindFirstChildWhichIsA("ProximityPrompt", true)
-
-                if Promptv33 then
-                    GameData.FirePromptv33(Promptv33)
-                    Openedv33 += 1
-                end
-            end
-        end
-    end
-end
-
-Sec.Main8:Button({
-    Title = "Open All Pirate Chest",
-    Callback = function()
-        task.spawn(function()
-            GameData.OpenAllPirateChestsv33()
-        end)
-    end
-})
-Sec.Main10 = Tabs.Main:Section({
-    Title = "Freecamera Drone",
-    Box = true,
-    BoxBorder = true,
-    Opened = false,
-})
-
-function GameData:ResetCameraToPlayerv28()
-	local charv28 = self.Playerv28.Character
-	if not charv28 then return end
-	local headv28 = charv28:FindFirstChild("Head") or charv28:FindFirstChild("HumanoidRootPart")
-	if headv28 then
-		self.Camerasv28.CFrame = headv28.CFrame
-	end
-end
-
-function GameData:SetCharacterMovev28(enabledv28)
-	local charv28 = self.Playerv28.Character
-	if not charv28 then return end
-	local humv28 = charv28:FindFirstChildOfClass("Humanoid")
-	if not humv28 then return end
-	if enabledv28 then
-		humv28.WalkSpeed = 16
-		humv28.JumpPower = 50
-	else
-		humv28.WalkSpeed = 0
-		humv28.JumpPower = 50
-	end
-end
-
-GameData.GUIsv28 = Instance.new("ScreenGui")
-GameData.GUIsv28.Name = "DroneCameraGUIv28"
-GameData.GUIsv28.ResetOnSpawn = false
-GameData.GUIsv28.Enabled = false
-GameData.GUIsv28.Parent = GameData.Playerv28.PlayerGui
-
-GameData.LeftFramev28 = Instance.new("Frame")
-GameData.LeftFramev28.Size = UDim2.fromScale(0.28, 0.35)
-GameData.LeftFramev28.Position = UDim2.fromScale(0.03, 0.55)
-GameData.LeftFramev28.AnchorPoint = Vector2.new(0, 1)
-GameData.LeftFramev28.BackgroundTransparency = 1
-GameData.LeftFramev28.Parent = GameData.GUIsv28
-
-function GameData:CreateButtonv28(textv28, posv28)
-	local bv28 = Instance.new("TextButton")
-	bv28.Size = UDim2.fromScale(0.32, 0.32)
-	bv28.Position = posv28
-	bv28.Text = textv28
-	bv28.Font = Enum.Font.GothamBold
-	bv28.TextScaled = true
-	bv28.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	bv28.TextColor3 = Color3.new(1,1,1)
-	bv28.Parent = self.LeftFramev28
-	local cv28 = Instance.new("UICorner")
-	cv28.CornerRadius = UDim.new(0.25,0)
-	cv28.Parent = bv28
-	return bv28
-end
-
-GameData.Buttonsv28.Forward = GameData:CreateButtonv28("▲", UDim2.fromScale(0.34, 0))
-GameData.Buttonsv28.Back    = GameData:CreateButtonv28("▼", UDim2.fromScale(0.34, 0.68))
-GameData.Buttonsv28.Left    = GameData:CreateButtonv28("◀", UDim2.fromScale(0, 0.34))
-GameData.Buttonsv28.Right   = GameData:CreateButtonv28("▶", UDim2.fromScale(0.68, 0.34))
-
-function GameData:EnableDronev28()
-	self.Dronev28 = true
-	self.Yawv28 = 0
-	self.Pitchv28 = 0
-	self:SetCharacterMovev28(false)
-	self.Camerasv28.CameraType = Enum.CameraType.Scriptable
-	self:ResetCameraToPlayerv28()
-	self.GUIsv28.Enabled = true
-end
-
-function GameData:DisableDronev28()
-	self.Dronev28 = false
-	self:SetCharacterMovev28(true)
-	self.Camerasv28.CameraType = Enum.CameraType.Custom
-	self:ResetCameraToPlayerv28()
-	self.GUIsv28.Enabled = false
-end
-
-GameData.Buttonsv28.Forward.MouseButton1Down:Connect(function()
-	GameData.MoveForwardv28 = 1
-end)
-GameData.Buttonsv28.Forward.MouseButton1Up:Connect(function()
-	GameData.MoveForwardv28 = 0
-end)
-
-GameData.Buttonsv28.Back.MouseButton1Down:Connect(function()
-	GameData.MoveForwardv28 = -1
-end)
-GameData.Buttonsv28.Back.MouseButton1Up:Connect(function()
-	GameData.MoveForwardv28 = 0
-end)
-
-GameData.Buttonsv28.Left.MouseButton1Down:Connect(function()
-	GameData.MoveRightv28 = -1
-end)
-GameData.Buttonsv28.Left.MouseButton1Up:Connect(function()
-	GameData.MoveRightv28 = 0
-end)
-
-GameData.Buttonsv28.Right.MouseButton1Down:Connect(function()
-	GameData.MoveRightv28 = 1
-end)
-GameData.Buttonsv28.Right.MouseButton1Up:Connect(function()
-	GameData.MoveRightv28 = 0
-end)
-
-GameData.Servicesv28.UIS.TouchMoved:Connect(function(inputv28, gpev28)
-	if not GameData.Dronev28 or gpev28 then return end
-	GameData.Yawv28 -= inputv28.Delta.X * GameData.Sensitivityv28
-	GameData.Pitchv28 -= inputv28.Delta.Y * GameData.Sensitivityv28
-	GameData.Pitchv28 = math.clamp(GameData.Pitchv28, -80, 80)
-end)
-
-GameData.Servicesv28.UIS.InputBegan:Connect(function(inputv28, gpev28)
-	if gpev28 or not GameData.Dronev28 then return end
-	if inputv28.KeyCode == Enum.KeyCode.W then
-		GameData.MoveForwardv28 = 1
-	elseif inputv28.KeyCode == Enum.KeyCode.S then
-		GameData.MoveForwardv28 = -1
-	elseif inputv28.KeyCode == Enum.KeyCode.A then
-		GameData.MoveRightv28 = -1
-	elseif inputv28.KeyCode == Enum.KeyCode.D then
-		GameData.MoveRightv28 = 1
-	end
-end)
-
-GameData.Servicesv28.UIS.InputEnded:Connect(function(inputv28)
-	if not GameData.Dronev28 then return end
-	if inputv28.KeyCode == Enum.KeyCode.W or inputv28.KeyCode == Enum.KeyCode.S then
-		GameData.MoveForwardv28 = 0
-	elseif inputv28.KeyCode == Enum.KeyCode.A or inputv28.KeyCode == Enum.KeyCode.D then
-		GameData.MoveRightv28 = 0
-	end
-end)
-
-GameData.Servicesv28.UIS.InputChanged:Connect(function(inputv28, gpev28)
-	if not GameData.Dronev28 or gpev28 then return end
-	if inputv28.UserInputType == Enum.UserInputType.MouseMovement then
-		GameData.Yawv28 -= inputv28.Delta.X * GameData.Sensitivityv28
-		GameData.Pitchv28 -= inputv28.Delta.Y * GameData.Sensitivityv28
-	end
-	if inputv28.KeyCode == Enum.KeyCode.Thumbstick1 then
-		GameData.MoveRightv28 = inputv28.Position.X
-		GameData.MoveForwardv28 = -inputv28.Position.Y
-	end
-	if inputv28.KeyCode == Enum.KeyCode.Thumbstick2 then
-		GameData.Yawv28 -= inputv28.Position.X * GameData.Sensitivityv28 * 5
-		GameData.Pitchv28 -= inputv28.Position.Y * GameData.Sensitivityv28 * 5
-	end
-	GameData.Pitchv28 = math.clamp(GameData.Pitchv28, -80, 80)
-end)
-
-GameData.Servicesv28.RunService.RenderStepped:Connect(function()
-	if not GameData.Dronev28 then return end
-	local cfv28 =
-		CFrame.new(GameData.Camerasv28.CFrame.Position) *
-		CFrame.Angles(0, math.rad(GameData.Yawv28), 0) *
-		CFrame.Angles(math.rad(GameData.Pitchv28), 0, 0)
-	local movev28 =
-		(cfv28.LookVector * GameData.MoveForwardv28) +
-		(cfv28.RightVector * GameData.MoveRightv28)
-	GameData.Camerasv28.CFrame = cfv28 + (movev28 * GameData.Speedv28)
-end)
-
-Sec.Main10:Toggle({
-    Title = "Drone Camera",
-    Flag = "DroneCamera",
-    Default = false,
-    Callback = function(valuev28)
-        if valuev28 then
-            GameData:EnableDronev28()
-        else
-            GameData:DisableDronev28()
-        end
-    end
-})
-
-Sec.Main10:Toggle({
-    Title = "Hide Gui Drone",
-    Flag = "HideGuiDrone",
-    Default = false,
-    Callback = function(value)
-        local gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("DroneCameraGUI")
-        gui.Enabled = not value
     end
 })
 
@@ -4565,141 +3527,6 @@ Sec.Backpack2 = Tabs.Backpack:Section({
     BoxBorder = true,
     Opened = false,
 })
-
-GameData.Clientv30 =
-    require(GameData.ReplicatedStoragev30.Packages.Replion).Client
-
-GameData.ItemUtilityv30 =
-    require(GameData.ReplicatedStoragev30.Shared.ItemUtility)
-
-GameData.VendorUtilityv30 =
-    require(GameData.ReplicatedStoragev30.Shared.VendorUtility)
-
-GameData.Datav30 = GameData.Clientv30:WaitReplion("Data")
-
-function GameData.formatNumber(n)
-    if n >= 1e6 then
-        return string.format("%.2fM", n / 1e6)
-    elseif n >= 1e3 then
-        return string.format("%.2fK", n / 1e3)
-    else
-        return tostring(n)
-    end
-end
-
-function GameData.updateFishStatus()
-    GameData.Inventoryv30 = GameData.Datav30:GetExpect({ "Inventory" })
-    if not GameData.Inventoryv30 then return end
-
-    GameData.CurrentItemsMapv30 = {}
-    for _, item in ipairs(GameData.Inventoryv30.Items or {}) do
-        GameData.CurrentItemsMapv30[item.UUID] = item
-    end
-
-    GameData.MissingCountv30 = 0
-    GameData.MissingValuev30 = 0
-
-    for uuid, oldItem in pairs(GameData.PreviousInventoryv30) do
-        local currentItem = GameData.CurrentItemsMapv30[uuid]
-        if not currentItem then
-            local itemData =
-                GameData.ItemUtilityv30.GetItemDataFromItemType("Items", oldItem.Id)
-
-            if itemData
-                and itemData.Data
-                and itemData.Data.Type == "Fish" then
-
-                GameData.MissingCountv30 += 1
-                local sellPrice =
-                    GameData.VendorUtilityv30:GetSellPrice(oldItem) or 0
-                GameData.MissingValuev30 += sellPrice
-            end
-        end
-    end
-
-    GameData.TotalSellPricev30 = 0
-    for _, item in ipairs(GameData.Inventoryv30.Items or {}) do
-        local itemData =
-            GameData.ItemUtilityv30.GetItemDataFromItemType("Items", item.Id)
-
-        if itemData
-            and itemData.Data
-            and itemData.Data.Type == "Fish" then
-
-            local sellPrice =
-                GameData.VendorUtilityv30:GetSellPrice(item) or 0
-            GameData.TotalSellPricev30 += sellPrice
-        end
-    end
-
-    GameData.HistoryMissingCountv30 += GameData.MissingCountv30
-    GameData.HistoryMissingValuev30 += GameData.MissingValuev30
-
-    local desc = (
-        "Total sell value of all fish: %s Coins\n" ..
-        "Missing fish count: %d\n" ..
-        "Missing fish value: %s Coins"
-    ):format(
-        GameData.formatNumber(GameData.TotalSellPricev30),
-        GameData.MissingCountv30,
-        GameData.formatNumber(GameData.MissingValuev30)
-    )
-
-    if GameData.FishQuantityv30 then
-        GameData.FishQuantityv30:SetDesc(desc)
-    else
-        GameData.FishQuantityv30 = Sec.Backpack2:Paragraph({
-            Title = "Fish Quantity and Value Status",
-            Desc = desc
-        })
-
-        Sec.Backpack2:Button({
-            Title = "Reset Values",
-            Locked = false,
-            Callback = function()
-                GameData.FishQuantityv30:SetDesc(
-                    "Total sell value of all fish: 0 Coins\n" ..
-                    "Missing fish count: 0\n" ..
-                    "Missing fish value: 0 Coins (Reset)"
-                )
-                GameData.PreviousInventoryv30 = {}
-                GameData.HistoryMissingCountv30 = 0
-                GameData.HistoryMissingValuev30 = 0
-            end
-        })
-
-        Sec.Backpack2:Button({
-            Title = "Check All History",
-            Locked = false,
-            Callback = function()
-                GameData.FishQuantityv30:SetDesc(
-                    ("Cumulative missing fish count: %d\n" ..
-                    "Cumulative missing fish value: %s Coins")
-                    :format(
-                        GameData.HistoryMissingCountv30,
-                        GameData.formatNumber(GameData.HistoryMissingValuev30)
-                    )
-                )
-            end
-        })
-    end
-
-    GameData.PreviousInventoryv30 = {}
-    for _, item in ipairs(GameData.Inventoryv30.Items or {}) do
-        GameData.PreviousInventoryv30[item.UUID] = item
-    end
-end
-
-GameData.updateFishStatus()
-
-task.spawn(function()
-    while true do
-        task.wait(3)
-        GameData.updateFishStatus()
-    end
-end)
-
-Sec.Backpack2:Space()
 
 GameData.Playerv4 = GameData.Servicesv4.Playersv4.LocalPlayer
 GameData.SellRemotev4 = GameData.Servicesv4.ReplicatedStoragev4:WaitForChild("Packages")
@@ -5050,218 +3877,6 @@ task.spawn(function()
     end
 end)
 
-Sec.Event2 = Tabs.Event:Section({
-    Title = "Join Event",
-    Box = true,
-    BoxBorder = true,
-    Opened = true,
-})
-
-
-function GameData.getHRPv28()
-    GameData.HRPv28 = GameData.Playerv28.Character
-        and GameData.Playerv28.Character:FindFirstChild("HumanoidRootPart")
-    return GameData.HRPv28
-end
-
-function GameData.freezev28()
-    GameData.HRPv28 = GameData.getHRPv28()
-    if not GameData.HRPv28 then return end
-
-    GameData.unfreezev28()
-
-    GameData.BVv28 = Instance.new("BodyVelocity")
-    GameData.BVv28.MaxForce = Vector3.new(1e9,1e9,1e9)
-    GameData.BVv28.Velocity = Vector3.zero
-    GameData.BVv28.Parent = GameData.HRPv28
-
-    GameData.BGv28 = Instance.new("BodyGyro")
-    GameData.BGv28.MaxTorque = Vector3.new(1e9,1e9,1e9)
-    GameData.BGv28.CFrame = GameData.HRPv28.CFrame
-    GameData.BGv28.Parent = GameData.HRPv28
-end
-
-function GameData.unfreezev28()
-    GameData.HRPv28 = GameData.getHRPv28()
-    if not GameData.HRPv28 then return end
-
-    if GameData.BVv28 then GameData.BVv28:Destroy() GameData.BVv28 = nil end
-    if GameData.BGv28 then GameData.BGv28:Destroy() GameData.BGv28 = nil end
-
-    for _, obj in ipairs(GameData.HRPv28:GetChildren()) do
-        if obj:IsA("BodyVelocity")
-        or obj:IsA("BodyGyro")
-        or obj:IsA("BodyPosition")
-        or obj:IsA("BodyAngularVelocity") then
-            obj:Destroy()
-        end
-    end
-end
-
-GameData.Playerv28.CharacterAdded:Connect(function()
-    task.wait(0.1)
-    GameData.unfreezev28()
-end)
-
-function GameData.getModelv28(hunt)
-    GameData.Propsv28 = workspace:FindFirstChild("Props")
-
-    if hunt == "Shark Hunt" then
-        for _, v in ipairs(workspace:GetChildren()) do
-            if v.Name == "Shark Hunt" then
-                return v
-            end
-        end
-    end
-
-    if GameData.Propsv28 then
-        GameData.Modelv28 = GameData.Propsv28:FindFirstChild(hunt)
-        if GameData.Modelv28 then return GameData.Modelv28 end
-
-        for _, item in ipairs(GameData.Propsv28:GetChildren()) do
-            if string.find(item.Name, hunt) then
-                return item
-            end
-        end
-    end
-
-    for _, item in ipairs(workspace:GetDescendants()) do
-        if item.Name == hunt or string.find(item.Name, hunt) then
-            return item
-        end
-    end
-
-    return nil
-end
-
-function GameData.getTargetv28(hunt)
-    GameData.Modelv28 = GameData.getModelv28(hunt)
-    if not GameData.Modelv28 then return nil end
-
-    if GameData.Modelv28:IsA("Model") then
-        GameData.PivotCFv28 = nil
-        pcall(function()
-            GameData.PivotCFv28 = GameData.Modelv28:GetPivot()
-        end)
-        if GameData.PivotCFv28 then
-            return {Type="Pivot", CFrame=GameData.PivotCFv28}
-        end
-    end
-
-    if GameData.Modelv28.PrimaryPart then
-        return {Type="Part", Object=GameData.Modelv28.PrimaryPart}
-    end
-
-    GameData.Descendantv28 = GameData.Modelv28:FindFirstChildWhichIsA("BasePart", true)
-    if GameData.Descendantv28 then
-        return {Type="Part", Object=GameData.Descendantv28}
-    end
-
-    return nil
-end
-
-function GameData.teleportTov28(hunt)
-    GameData.HRPv28 = GameData.getHRPv28()
-    if not GameData.HRPv28 then return false end
-
-    GameData.Targetv28 = GameData.getTargetv28(hunt)
-    if not GameData.Targetv28 then return false end
-
-    if not GameData.SavedCFramev28 then
-        GameData.SavedCFramev28 = GameData.HRPv28.CFrame
-    end
-
-    if GameData.Targetv28.Type == "Pivot" then
-        GameData.TargetPosv28 = GameData.Targetv28.CFrame.Position + Vector3.new(0,6,0)
-    else
-        GameData.TargetPosv28 = GameData.Targetv28.Object.Position + Vector3.new(0,6,0)
-    end
-
-    GameData.TeleportSuccessv28 = false
-
-    for i = 1, 3 do
-        if pcall(function()
-            GameData.HRPv28.CFrame = CFrame.new(GameData.TargetPosv28)
-        end) then
-            GameData.TeleportSuccessv28 = true
-            break
-        end
-        task.wait(0.5)
-    end
-
-    if not GameData.TeleportSuccessv28 then
-        GameData.Tweenv28 = GameData.TweenServicev28:Create(
-            GameData.HRPv28,
-            TweenInfo.new(1, Enum.EasingStyle.Linear),
-            {CFrame = CFrame.new(GameData.TargetPosv28)}
-        )
-        pcall(function()
-            GameData.Tweenv28:Play()
-            GameData.Tweenv28.Completed:Wait()
-        end)
-        GameData.TeleportSuccessv28 = true
-    end
-
-    if GameData.TeleportSuccessv28 then
-        GameData.freezev28()
-        GameData.CurrentHuntv28 = hunt
-        return true
-    end
-
-    return false
-end
-
-task.spawn(function()
-    while task.wait(0.5) do
-        if not GameData.Activev28 then continue end
-
-        if GameData.CurrentHuntv28 then
-            if GameData.getModelv28(GameData.CurrentHuntv28) then
-                continue
-            else
-                GameData.CurrentHuntv28 = nil
-                GameData.unfreezev28()
-            end
-        end
-
-        for _, hunt in ipairs(GameData.SelectedHuntsv28) do
-            if GameData.getModelv28(hunt) then
-                GameData.teleportTov28(hunt)
-                break
-            end
-        end
-    end
-end)
-
-Sec.Event2:Dropdown({
-    Title = "Select Event",
-    Values = GameData.HuntListv28,
-    Multi = true,
-    AllowNone = true,
-    Callback = function(option)
-        GameData.SelectedHuntsv28 =
-            typeof(option) == "table" and option or
-            typeof(option) == "string" and {option} or {}
-    end
-})
-
-Sec.Event2:Toggle({
-    Title = "Join Event",
-    Value = false,
-    Callback = function(state)
-        GameData.Activev28 = state
-
-        if not state then
-            GameData.unfreezev28()
-            if GameData.HRPv28 and GameData.SavedCFramev28 then
-                GameData.HRPv28.CFrame = GameData.SavedCFramev28
-            end
-            GameData.SavedCFramev28 = nil
-            GameData.CurrentHuntv28 = nil
-        end
-    end
-})
-
 Sec.Quest1 = Tabs.Quest:Section({
     Title = "Progress Quests",
     Box = true,
@@ -5282,14 +3897,14 @@ GameData.QuestList = GetQuestList()
 
 GameData.ElementParagraph = Sec.Quest1:Paragraph({
     Title = "Element Quest",
-    Desc = "No Progress Data",
+    Desc = "Waiting quest...",
     Locked = false,
     Buttons = {}
 })
 
 GameData.DeepSeaParagraph = Sec.Quest1:Paragraph({
     Title = "Deep Sea Quest",
-    Desc = "No Progress Data",
+    Desc = "Waiting quest...",
     Locked = false,
     Buttons = {}
 })
@@ -5664,36 +4279,6 @@ Sec.Quest3:Toggle({
     end
 })
 
-GameData.NetFolderv20 = GameData.ReplicatedStoragev20
-    :WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-
-GameData.RE_DialogueEndedv20 = GameData.NetFolderv20:WaitForChild("RE/DialogueEnded")
-GameData.RE_SearchItemPickedUpv20 = GameData.NetFolderv20:WaitForChild("RE/SearchItemPickedUp")
-GameData.RE_GainAccessToMazev20 = GameData.NetFolderv20:WaitForChild("RE/GainAccessToMaze")
-
-Sec.Quest3:Toggle({
-    Title = "Auto Open Mysterious Cave Wall",
-    Flag = "AutoOpenWallv20",
-    Value = false,
-    Callback = function(state)
-        GameData.AutoOpenWallv20 = state
-
-        if GameData.AutoOpenWallv20 then
-            GameData.Connectionv20 = GameData.RunServicev20.Heartbeat:Connect(function()
-                GameData.ExecuteStepsv20()
-            end)
-        else
-            if GameData.Connectionv20 then
-                GameData.Connectionv20:Disconnect()
-                GameData.Connectionv20 = nil
-            end
-        end
-    end
-})
-
 Sec.Quest4 = Tabs.Quest:Section({
     Title = "Diamond Rod",
     Box = true,
@@ -5734,25 +4319,25 @@ end)
 
 GameData.ProgresDiamondRod = Sec.Quest4:Paragraph({
     Title = "Progres Quest Diamond Rod",
-    Desc = "No Progress Data",
+    Desc = "Loading..."
 })
 
 function GameData.UpdateDiamondQuestDesc()
     local pg = GameData.player:FindFirstChild("PlayerGui")
     if not pg then
-        GameData.ProgresDiamondRod:SetDesc("Loading... Progress Data")
+        GameData.ProgresDiamondRod:SetDesc("Loading...")
         return
     end
 
     local questGui = pg:FindFirstChild("Quest")
     if not questGui or not questGui:FindFirstChild("List") then
-        GameData.ProgresDiamondRod:SetDesc("Loading... Progress Data")
+        GameData.ProgresDiamondRod:SetDesc("Loading...")
         return
     end
 
     GameData.inside = questGui.List:FindFirstChild("Inside")
     if not GameData.inside then
-        GameData.ProgresDiamondRod:SetDesc("No Progress Data")
+        GameData.ProgresDiamondRod:SetDesc("Loading...")
         return
     end
 
@@ -5906,11 +4491,11 @@ Sec.Trading1 = Tabs.Trading:Section({
     Opened = true,
 })
 
-GameData.DataReplionv29 = GameData.ReplionClientv29:WaitReplion("Data")
-GameData.TierListv29 = GameData.TierList001
+GameData.DataReplion = GameData.ReplionClient:WaitReplion("Data")
+GameData.TierList = GameData.TierList001
 
 for num, name in pairs(GameData.TierMap001) do
-	GameData.nameToTierv29[name] = num
+	GameData.nameToTier[name] = num
 end
 
 -- Normalize helper
@@ -5934,7 +4519,7 @@ end
 -- Check if item tier matches selected tiers
 function GameData.isTierMatch(itemTier, selected)
 	for _, tName in ipairs(selected) do
-		if GameData.nameToTierv29[tName] == tonumber(itemTier) then
+		if GameData.nameToTier[tName] == tonumber(itemTier) then
 			return true
 		end
 	end
@@ -5944,111 +4529,95 @@ end
 -- Safe invoke trade request
 function GameData.safeTrade(userid, uuid)
 	pcall(function()
-		GameData.TradeRemotev29:InvokeServer(userid, uuid)
+		GameData.TradeRemote:InvokeServer(userid, uuid)
 	end)
 end
 
--- Get item list from inventory with counts and types
-function GameData.getItemList()
-	local inventory = GameData.DataReplionv29:GetExpect({ "Inventory", "Items" }) or {}
-	local itemCount = {} -- Menyimpan jumlah per jenis item dengan tipe
+-- Get fish list from inventory dengan jumlah
+function GameData.getFishList()
+	local inventory = GameData.DataReplion:GetExpect({ "Inventory", "Items" }) or {}
+	local fishCount = {} -- Menyimpan jumlah per jenis ikan
 	
-	-- Hitung jumlah per jenis item
+	-- Hitung jumlah per jenis ikan
 	for _, item in ipairs(inventory) do
 		local ok, data = pcall(function()
-			return GameData.ItemUtilityv29.GetItemDataFromItemType("Items", item.Id)
+			return GameData.ItemUtility.GetItemDataFromItemType("Items", item.Id)
 		end)
 
-		if ok and data and data.Data then
-			local itemType = data.Data.Type
-			local itemName = data.Data.Name
-			
-			-- Filter berdasarkan tipe yang diaktifkan
-			if GameData.statev29.enabledTypes[itemType] then
-				local key = itemType .. "|" .. itemName
-				if not itemCount[key] then
-					itemCount[key] = {
-						name = itemName,
-						type = itemType,
-						count = 0
-					}
-				end
-				itemCount[key].count = itemCount[key].count + 1
-			end
+		if ok and data and data.Data and data.Data.Type == "Fish" then
+			local fishName = data.Data.Name
+			fishCount[fishName] = (fishCount[fishName] or 0) + 1
 		end
 	end
 	
 	-- Konversi ke format yang diinginkan
 	local list = {}
-	for _, itemData in pairs(itemCount) do
+	for fishName, count in pairs(fishCount) do
 		table.insert(list, {
-			name = itemData.name,
-			type = itemData.type,
-			display = itemData.name .. " [" .. itemData.count .. "]",
-			count = itemData.count,
-			fullName = itemData.type .. "|" .. itemData.name
+			name = fishName,
+			display = fishName .. " [" .. count .. "]",
+			count = count
 		})
 	end
 	
-	-- Sort berdasarkan nama item saja (tanpa tipe)
+	-- Sort berdasarkan nama ikan
 	table.sort(list, function(a, b)
 		return a.name < b.name
 	end)
 	
-	return list, itemCount
+	return list, fishCount
 end
 
 -- Worker function for auto trade
 function GameData.workerTrade()
-	GameData.RATEv29 = 0.15
-	GameData.LOOP_DELAYv29 = 1
+	GameData.RATE = 0.15
+	GameData.LOOP_DELAY = 1
 
-	while GameData.statev29.Auto2Trade do
-		if GameData.statev29.stopTrade then
+	while GameData.state.Auto2Trade do
+		if GameData.state.stopTrade then
 			return
 		end
 
-		local target = GameData.Playersv29:FindFirstChild(GameData.statev29.targetPlayer)
+		local target = GameData.Players:FindFirstChild(GameData.state.targetPlayer)
 		if not target then
-			GameData.statev29.Auto2Trade = false
+			GameData.state.Auto2Trade = false
 			WindUI:Notify({
 				Title = "Trade",
 				Content = "Target player not found, stopping trade.",
 				Duration = 4,
-				Icon = "cloud-alert"
+				Icon = "error"
 			})
 			return
 		end
 
-		local inventory = GameData.DataReplionv29:GetExpect({ "Inventory", "Items" }) or {}
+		local inventory = GameData.DataReplion:GetExpect({ "Inventory", "Items" }) or {}
 		local list = {}
 
 		for _, item in ipairs(inventory) do
 			local ok, data = pcall(function()
-				return GameData.ItemUtilityv29.GetItemDataFromItemType("Items", item.Id)
+				return GameData.ItemUtility.GetItemDataFromItemType("Items", item.Id)
 			end)
 
 			if ok and data and data.Data then
-				-- Check if item type is enabled
-				if GameData.statev29.enabledTypes[data.Data.Type] then
+				if data.Data.Type == "Fish" then
 					local pass = false
 					
-					-- Check item filter (prioritas jika diaktifkan)
-					if GameData.statev29.useItemFilter and #GameData.statev29.selectedItems > 0 then
-						for _, fullName in ipairs(GameData.statev29.selectedItems) do
-							local itemType, itemName = fullName:match("^(.+)|(.+)$")
-							if itemType and itemName then
-								if data.Data.Type == itemType and data.Data.Name == itemName then
-									pass = true
-									break
-								end
+					-- Check fish filter (prioritas jika diaktifkan)
+					if GameData.state.useFishFilter and #GameData.state.selectedFish > 0 then
+						for _, fishName in ipairs(GameData.state.selectedFish) do
+							-- Extract nama ikan dari format "Granmaja [3]"
+							local cleanFishName = fishName:match("^(.+) %[%d+%]$") or fishName
+							-- Skip jika "None Fish"
+							if cleanFishName ~= "None Fish" and data.Data.Name == cleanFishName then
+								pass = true
+								break
 							end
 						end
 					else
-						-- Jika filter item tidak aktif, gunakan tier filter
+
 						pass = GameData.isTierMatch(
 							data.Data.Tier,
-							GameData.statev29.selectedTiers
+							GameData.state.selectedTiers
 						)
 					end
 					
@@ -6062,65 +4631,65 @@ function GameData.workerTrade()
 		if #list == 0 then
 			WindUI:Notify({
 				Title = "Trade",
-				Content = "No more items for selected filter",
+				Content = "No more fish for selected filter",
 				Duration = 4,
-				Icon = "package"
+				Icon = "fish"
 			})
-			GameData.statev29.Auto2Trade = false
+			GameData.state.Auto2Trade = false
 			break
 		end
 
 		for _, uuid in ipairs(list) do
-			if not GameData.statev29.Auto2Trade then
+			if not GameData.state.Auto2Trade then
 				break
 			end
 
 			GameData.safeTrade(target.UserId, uuid)
-			task.wait(GameData.RATEv29)
+			task.wait(GameData.RATE)
 		end
 
-		task.wait(GameData.LOOP_DELAYv29)
+		task.wait(GameData.LOOP_DELAY)
 	end
 end
 
-GameData.notifGuiv29 = GameData.playerv29.PlayerGui:WaitForChild("Text Notifications")
-GameData.notifFramev29 = GameData.notifGuiv29:WaitForChild("Frame")
+GameData.notifGui = GameData.player.PlayerGui:WaitForChild("Text Notifications")
+GameData.notifFrame = GameData.notifGui:WaitForChild("Frame")
 
 function GameData.checkTradeTile(tile)
 	local header = tile:FindFirstChild("Header")
 	if header and header:IsA("TextLabel") then
 		if header.Text == "Trade completed!" then
-			GameData.statev29.fishCount = GameData.statev29.fishCount + 1
+			GameData.state.fishCount = GameData.state.fishCount + 1
 
 			WindUI:Notify({
 				Title = "Trade",
-				Content = "Trade completed! (" .. GameData.statev29.fishCount .. "/" .. GameData.statev29.fishTarget .. ")",
+				Content = "Trade completed! (" .. GameData.state.fishCount .. "/" .. GameData.state.fishTarget .. ")",
 				Duration = 3,
-				Icon = "handshake"
+				Icon = "trade"
 			})
 
-			if GameData.statev29.fishTarget > 0 and GameData.statev29.fishCount >= GameData.statev29.fishTarget then
-				GameData.statev29.Auto2Trade = false
-				GameData.statev29.stopTrade = true
+			if GameData.state.fishTarget > 0 and GameData.state.fishCount >= GameData.state.fishTarget then
+				GameData.state.Auto2Trade = false
+				GameData.state.stopTrade = true
 
 				WindUI:Notify({
 					Title = "Trade",
 					Content = "Trade target reached!",
 					Duration = 3,
-					Icon = "cloud-check"
+					Icon = "success"
 				})
 			end
 		end
 	end
 end
 
-for _, tile in ipairs(GameData.notifFramev29:GetChildren()) do
+for _, tile in ipairs(GameData.notifFrame:GetChildren()) do
 	if tile.Name == "TextTile" then
 		GameData.checkTradeTile(tile)
 	end
 end
 
-GameData.notifFramev29.ChildAdded:Connect(function(child)
+GameData.notifFrame.ChildAdded:Connect(function(child)
 	if child.Name == "TextTile" then
 		local headerObj = child:WaitForChild("Header", 5)
 		if headerObj then
@@ -6130,16 +4699,16 @@ GameData.notifFramev29.ChildAdded:Connect(function(child)
 end)
 
 
-GameData.PlayerMapv29 = {}
+GameData.PlayerMap = {}
 
-GameData.RefreshPlayersv29 = function(dropdown)
+GameData.RefreshPlayers = function(dropdown)
 	local options = {}
-	table.clear(GameData.PlayerMapv29)
+	table.clear(GameData.PlayerMap)
 
-	for _, plr in ipairs(GameData.Playersv29:GetPlayers()) do
-		if plr ~= GameData.playerv29 then
+	for _, plr in ipairs(GameData.Players:GetPlayers()) do
+		if plr ~= GameData.player then
 			local label = plr.DisplayName .. " @" .. plr.Name
-			GameData.PlayerMapv29[label] = plr.Name
+			GameData.PlayerMap[label] = plr.Name
 			table.insert(options, label)
 		end
 	end
@@ -6148,11 +4717,11 @@ GameData.RefreshPlayersv29 = function(dropdown)
 
 	if #options > 0 then
 		dropdown:Select(options[1])
-		GameData.statev29.targetPlayer = GameData.PlayerMapv29[options[1]]
+		GameData.state.targetPlayer = GameData.PlayerMap[options[1]]
 	end
 end
 
-GameData.PlayerDropdownv29 = Sec.Trading1:Dropdown({
+GameData.PlayerDropdown = Sec.Trading1:Dropdown({
 	Title = "Select Target Player",
 	Flag = "SelectTargetPlayer",
 	SearchBarEnabled = true,
@@ -6162,55 +4731,52 @@ GameData.PlayerDropdownv29 = Sec.Trading1:Dropdown({
 	Multi = false,
 	AllowNone = false,
 	Callback = function(selection)
-		if GameData.PlayerMapv29[selection] then
-			GameData.statev29.targetPlayer = GameData.PlayerMapv29[selection]
-			-- HAPUS NOTIFIKASI DI SINI (tidak perlu notif saat ganti player)
+		if GameData.PlayerMap[selection] then
+			GameData.state.targetPlayer = GameData.PlayerMap[selection]
+			WindUI:Notify({
+				Title = "Target",
+				Content = "Selected: " .. selection,
+				Duration = 3,
+				Icon = "user"
+			})
 		end
 	end
 })
 
-GameData.RefreshPlayersv29(GameData.PlayerDropdownv29)
+GameData.RefreshPlayers(GameData.PlayerDropdown)
 
 Sec.Trading1:Button({
 	Title = "Refresh Player List",
 	Desc = "Update the player dropdown",
 	Callback = function()
-		GameData.RefreshPlayersv29(GameData.PlayerDropdownv29)
-		-- Tampilkan notifikasi hanya saat refresh manual
-		WindUI:Notify({
-			Title = "Players",
-			Content = "Player list refreshed",
-			Duration = 3,
-			Icon = "refresh-cw"
-		})
+		GameData.RefreshPlayers(GameData.PlayerDropdown)
 	end
 })
 
 Sec.Trading1:Input({
-	Title = "Item Amount Trade",
-	Flag = "ItemAmountTrade",
-	Desc = "Enter the number of items to trade",
-	Value = tostring(GameData.statev29.fishTarget or ""),
+	Title = "Fish Amount Trade",
+	Flag = "FishAmountTrade",
+	Desc = "Enter the number of fish to trade",
+	Value = tostring(GameData.state.fishTarget or ""),
 	Placeholder = "Example: 10",
 	Type = "Input",
 	Callback = function(input)
 		local amount = tonumber(input)
 		if amount then
-			GameData.statev29.fishTarget = amount
-			GameData.statev29.fishCount = 0
-			-- Tampilkan notifikasi untuk setting target
+			GameData.state.fishTarget = amount
+			GameData.state.fishCount = 0
 			WindUI:Notify({
-				Title = "Trade Target",
+				Title = "Trade",
 				Content = "Trade target set: " .. amount,
 				Duration = 3,
-				Icon = "package"
+				Icon = "fish"
 			})
 		else
 			WindUI:Notify({
 				Title = "Error",
 				Content = "Input must be a number!",
 				Duration = 3,
-				Icon = "cloud-alert"
+				Icon = "error"
 			})
 		end
 	end
@@ -6226,88 +4792,101 @@ Sec.Trading1:Dropdown({
 	Multi = true,
 	AllowNone = true,
 	Callback = function(selectedTiers)
-		GameData.statev29.selectedTiers = GameData.normalize(selectedTiers)
-		GameData.statev29.useItemFilter = false -- Nonaktifkan item filter saat tier dipilih
-		-- HAPUS NOTIFIKASI DI SINI (tidak perlu notif saat ganti tier)
+		GameData.state.selectedTiers = GameData.normalize(selectedTiers)
+		GameData.state.useFishFilter = false -- Nonaktifkan fish filter saat tier dipilih
+		WindUI:Notify({
+			Title = "Tier Selected",
+			Content = table.concat(GameData.state.selectedTiers, ", "),
+			Duration = 3,
+			Icon = "star"
+		})
 	end
 })
 
-local ItemDropdownv29
-local itemListDatav29 = {} 
+local FishDropdown
+local fishListData = {} 
 
-local function refreshItemDropdownv29()
-	local itemList, itemCount = GameData.getItemList()
+local function refreshFishDropdown()
+	local fishList, fishCount = GameData.getFishList()
 	local displayValues = {}
-	itemListDatav29 = {}
+	fishListData = {}
 
-	table.insert(displayValues, "None Item")
-	itemListDatav29["None Item"] = "None|Item"
+	table.insert(displayValues, "None Fish")
+	fishListData["None Fish"] = "None Fish"
 	
-	for _, itemData in ipairs(itemList) do
-		table.insert(displayValues, itemData.display)
-		itemListDatav29[itemData.display] = itemData.fullName
+	for _, fishData in ipairs(fishList) do
+		table.insert(displayValues, fishData.display)
+		fishListData[fishData.display] = fishData.name
 	end
 	
-	ItemDropdownv29:Refresh(displayValues)
+	FishDropdown:Refresh(displayValues)
 	
-	ItemDropdownv29:Select({"None Item"})
+	FishDropdown:Select({"None Fish"})
 	
-	local totalItems = 0
-	for _, itemData in ipairs(itemList) do
-		totalItems = totalItems + itemData.count
+	local totalFish = 0
+	for _, count in pairs(fishCount) do
+		totalFish = totalFish + count
 	end
 	
-	return #itemList, totalItems
+	return #fishList, totalFish
 end
 
-ItemDropdownv29 = Sec.Trading1:Dropdown({
-	Title = "Select Items",
-	Flag = "SelectItems",
+FishDropdown = Sec.Trading1:Dropdown({
+	Title = "Select Fish",
+	Flag = "SelectFish",
     SearchBarEnabled = true,
 	Values = {},
 	Value = {},
 	Multi = true,
 	AllowNone = true,
-	Callback = function(selectedItems)
+	Callback = function(selectedFish)
+
 		local cleanSelected = {}
-		for _, displayName in ipairs(GameData.normalize(selectedItems)) do
-			local fullName = itemListDatav29[displayName] or displayName
-			table.insert(cleanSelected, fullName)
+		for _, displayName in ipairs(GameData.normalize(selectedFish)) do
+			local cleanName = fishListData[displayName] or displayName:match("^(.+) %[%d+%]$") or displayName
+			table.insert(cleanSelected, cleanName)
 		end
 		
-		GameData.statev29.selectedItems = cleanSelected
-		GameData.statev29.useItemFilter = false
+		GameData.state.selectedFish = cleanSelected
+		GameData.state.useFishFilter = false
 		
-		for _, fullName in ipairs(cleanSelected) do
-			if fullName ~= "None|Item" then
-				GameData.statev29.useItemFilter = true
+		for _, fishName in ipairs(cleanSelected) do
+			if fishName ~= "None Fish" then
+				GameData.state.useFishFilter = true
 				break
 			end
 		end
 		
-		if not GameData.statev29.useItemFilter then
-			GameData.statev29.selectedItems = {}
+		if not GameData.state.useFishFilter then
+			GameData.state.selectedFish = {}
 		end
 		
-		-- HAPUS NOTIFIKASI DI SINI (tidak perlu notif saat pilih item)
+		WindUI:Notify({
+			Title = "Fish Filter",
+			Content = GameData.state.useFishFilter and 
+				("Selected " .. (#cleanSelected - (cleanSelected[1] == "None Fish" and 1 or 0)) .. " fish types") or 
+				"Fish filter disabled (None Fish selected)",
+			Duration = 3,
+			Icon = "fish"
+		})
 	end
 })
 
--- Refresh item list button
+-- Refresh fish list button
 Sec.Trading1:Button({
-	Title = "Refresh Item List",
-	Desc = "Update available items from inventory (auto-selects None Item)",
+	Title = "Refresh Fish List",
+	Desc = "Update available fish from inventory (auto-selects None Fish)",
 	Callback = function()
-		local itemTypes, totalItems = refreshItemDropdownv29()
+		local fishTypes, totalFish = refreshFishDropdown()
 		
-		GameData.statev29.selectedItems = {}
-		GameData.statev29.useItemFilter = false
+		GameData.state.selectedFish = {}
+		GameData.state.useFishFilter = false
 		
 		WindUI:Notify({
-			Title = "Item List",
-			Content = itemTypes .. " item types (" .. totalItems .. " total items)",
+			Title = "Fish List",
+			Content = fishTypes .. " fish types (" .. totalFish .. " total fish)\nAuto-selected: None Fish",
 			Duration = 4,
-			Icon = "refresh-cw"
+			Icon = "refresh"
 		})
 	end
 })
@@ -6319,31 +4898,23 @@ Sec.Trading1:Toggle({
 	Desc = "Enable or disable auto trading",
 	Value = false,
 	Callback = function(state)
-		GameData.statev29.Auto2Trade = state
-		GameData.statev29.stopTrade = not state
+		GameData.state.Auto2Trade = state
+		GameData.state.stopTrade = not state
 
 		if state then
 			task.spawn(GameData.workerTrade)
-			-- Notifikasi hanya saat mulai auto trade
-			WindUI:Notify({
-				Title = "Auto Trade",
-				Content = "Auto Trade Started",
-				Duration = 3,
-				Icon = "play"
-			})
-		else
-			-- Notifikasi hanya saat stop auto trade
-			WindUI:Notify({
-				Title = "Auto Trade",
-				Content = "Auto Trade Stopped",
-				Duration = 3,
-				Icon = "circle-pause"
-			})
 		end
+
+		WindUI:Notify({
+			Title = "Auto Trade",
+			Content = state and "Auto Trade Enabled" or "Auto Trade Disabled",
+			Duration = 3,
+			Icon = "trade"
+		})
 	end
 })
 
-refreshItemDropdownv29()
+refreshFishDropdown()
 
 Sec.Shop1 = Tabs.Shop:Section({
     Title = "Rod Shop",
@@ -6352,43 +4923,23 @@ Sec.Shop1 = Tabs.Shop:Section({
     Opened = true,
 })
 
-for name, _ in pairs(GameData.RodIDsShopv36) do
-    table.insert(GameData.RodNamesv36, name)
-end
-
-GameData.PurchaseRodRemotev36 = GameData.ReplicatedStoragev36
-    :WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-    :WaitForChild("RF/PurchaseFishingRod")
-
-function GameData.AutoBuyLoopv36()
-    while GameData.AutoBuyEnabledv36 do
-        if #GameData.SelectedRodIDsv36 > 0 then
-            for _, id in ipairs(GameData.SelectedRodIDsv36) do
-                pcall(function()
-                    GameData.PurchaseRodRemotev36:InvokeServer(id)
-                end)
-            end
-        end
-        task.wait(5)
-    end
-end
+local selectedRods = {}
+local autoBuyRods = false
 
 Sec.Shop1:Dropdown({
     Title = "Select Rods",
     Flag = "SelectRods",
     SearchBarEnabled = true,
-    Values = GameData.RodNamesv36,
+    Values = RodNames,
+    Value = {},
     Multi = true,
     AllowNone = true,
-    Callback = function(values)
-        table.clear(GameData.SelectedRodIDsv36)
-        for _, rodName in ipairs(values or {}) do
-            local id = GameData.RodIDsShopv36[rodName]
+    Callback = function(val)
+        table.clear(selectedRods)
+        for _, rodName in ipairs(val) do
+            local id = RodIDs[rodName]
             if id then
-                table.insert(GameData.SelectedRodIDsv36, id)
+                table.insert(selectedRods, id)
             end
         end
     end
@@ -6399,10 +4950,28 @@ Sec.Shop1:Toggle({
     Flag = "AutoPurchaseRods",
     Value = false,
     Callback = function(state)
-        GameData.AutoBuyEnabledv36 = state
-        if state then
-            task.spawn(GameData.AutoBuyLoopv36)
-        end
+        autoBuyRods = state
+        if not state then return end
+
+        task.spawn(function()
+            local remote = ReplicatedStorage
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_net@0.2.0")
+                :WaitForChild("net")
+                :WaitForChild("RF/PurchaseFishingRod")
+
+            while autoBuyRods do
+                if #selectedRods > 0 then
+                    for _, id in ipairs(selectedRods) do
+                        pcall(function()
+                            remote:InvokeServer(id)
+                        end)
+                    end
+                end
+                task.wait(5)
+            end
+        end)
     end
 })
 
@@ -6413,57 +4982,55 @@ Sec.Shop2 = Tabs.Shop:Section({
     Opened = true,
 })
 
-for name, _ in pairs(GameData.BaitIDsShopv37) do
-    table.insert(GameData.BaitNamesv37, name)
-end
-
-GameData.PurchaseBaitRemotev37 = GameData.ReplicatedStoragev37
-    :WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-    :WaitForChild("RF/PurchaseBait")
-
-function GameData.AutoBuyBaitLoopv37()
-    while GameData.AutoBuyBaitEnabledv37 do
-        if #GameData.SelectedBaitIDsv37 > 0 then
-            for _, id in ipairs(GameData.SelectedBaitIDsv37) do
-                pcall(function()
-                    GameData.PurchaseBaitRemotev37:InvokeServer(id)
-                end)
-            end
-        end
-        task.wait(5)
-    end
-end
+local selectedBaits = {}
+local autoBuyBait = false
 
 Sec.Shop2:Dropdown({
     Title = "Select Baits",
     Flag = "SelectBaits",
     SearchBarEnabled = true,
-    Values = GameData.BaitNamesv37,
+    Values = baitNames,
+    Value = {},
     Multi = true,
     AllowNone = true,
-    Callback = function(values)
-        table.clear(GameData.SelectedBaitIDsv37)
-        for _, baitName in ipairs(values or {}) do
-            local id = GameData.BaitIDsShopv37[baitName]
+    Callback = function(val)
+        table.clear(selectedBaits)
+        for _, baitName in ipairs(val) do
+            local id = BaitIDs[baitName]
             if id then
-                table.insert(GameData.SelectedBaitIDsv37, id)
+                table.insert(selectedBaits, id)
             end
         end
     end
 })
 
 Sec.Shop2:Toggle({
-    Title = "Auto Purchase Baits",
+    Title = "Auto Purchase Loop",
     Flag = "AutoPurchaseBait",
     Value = false,
     Callback = function(state)
-        GameData.AutoBuyBaitEnabledv37 = state
-        if state then
-            task.spawn(GameData.AutoBuyBaitLoopv37)
-        end
+        autoBuyBait = state
+        if not state then return end
+
+        task.spawn(function()
+            local purchaseRemote = ReplicatedStorage
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_net@0.2.0")
+                :WaitForChild("net")
+                :WaitForChild("RF/PurchaseBait")
+
+            while autoBuyBait do
+                if #selectedBaits > 0 then
+                    for _, id in ipairs(selectedBaits) do
+                        pcall(function()
+                            purchaseRemote:InvokeServer(id)
+                        end)
+                    end
+                end
+                task.wait(5)
+            end
+        end)
     end
 })
 
@@ -6546,7 +5113,7 @@ end
 table.sort(GameData.PurchaseBoatOptionsv11)
 
 Sec.Shop4:Dropdown({
-    Title = "Select Boat",
+    Title = "Select Boat to Purchase",
     Flag = "SelectBoatv11",
     SearchBarEnabled = true,
     Values = GameData.PurchaseBoatOptionsv11,
@@ -7230,76 +5797,6 @@ Sec.Tp3:Toggle({
     end
 })
 
-function GameData:GetRootv26()
-    self.Characterv26 = self.Playerv26.Character
-    if self.Characterv26 then
-        self.Rootv26 = self.Characterv26:FindFirstChild("HumanoidRootPart")
-        return self.Rootv26
-    end
-end
-
-function GameData:FreezeCharacterv26()
-    self.Rootv26 = self:GetRootv26()
-    if not self.Rootv26 then return end
-
-    self.BVv26 = Instance.new("BodyVelocity")
-    self.BVv26.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    self.BVv26.Velocity = Vector3.zero
-    self.BVv26.Parent = self.Rootv26
-
-    self.BGv26 = Instance.new("BodyGyro")
-    self.BGv26.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    self.BGv26.CFrame = self.Rootv26.CFrame
-    self.BGv26.P = 10000
-    self.BGv26.Parent = self.Rootv26
-end
-
-function GameData:UnfreezeCharacterv26()
-    if self.BVv26 then
-        self.BVv26:Destroy()
-        self.BVv26 = nil
-    end
-    if self.BGv26 then
-        self.BGv26:Destroy()
-        self.BGv26 = nil
-    end
-end
-
-function GameData:ApplyFreezerv26(state)
-    self.Freezev26 = state
-    if state then
-        self:FreezeCharacterv26()
-    else
-        self:UnfreezeCharacterv26()
-    end
-end
-
-GameData.FreezeTogglev26 = Sec.Tp3:Toggle({
-    Title = "Freeze Character",
-    Flag = "FreezeCharacterv26",
-    Value = false,
-    Callback = function(state)
-        GameData:ApplyFreezerv26(state)
-    end
-})
-
-GameData.UISv26.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.F then
-        GameData:ApplyFreezerv26(not GameData.Freezev26)
-        if GameData.FreezeTogglev26 and GameData.FreezeTogglev26.SetValue then
-            GameData.FreezeTogglev26:SetValue(GameData.Freezev26)
-        end
-    end
-end)
-
-GameData.Playerv26.CharacterAdded:Connect(function()
-    if GameData.Freezev26 then
-        task.wait(0.3)
-        GameData:FreezeCharacterv26()
-    end
-end)
-
 Sec.Player1 = Tabs.Player:Section({
     Title = "Player Identity",
     Box = true,
@@ -7389,6 +5886,191 @@ Sec.Player = Tabs.Player:Section({
     Box = true,
     BoxBorder = true,
     Opened = true,
+})
+
+function GameData:ResetCameraToPlayer()
+	local char = self.Player.Character
+	if not char then return end
+	local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+	if head then
+		self.Camera.CFrame = head.CFrame
+	end
+end
+
+function GameData:SetCharacterMove(enabled)
+	local char = self.Player.Character
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+	if enabled then
+		hum.WalkSpeed = 16
+		hum.JumpPower = 50
+	else
+		hum.WalkSpeed = 0
+		hum.JumpPower = 50
+	end
+end
+
+GameData.GUI = Instance.new("ScreenGui")
+GameData.GUI.Name = "DroneCameraGUI"
+GameData.GUI.ResetOnSpawn = false
+GameData.GUI.Enabled = false
+GameData.GUI.Parent = GameData.Player.PlayerGui
+
+GameData.LeftFrame = Instance.new("Frame")
+GameData.LeftFrame.Size = UDim2.fromScale(0.28, 0.35)
+GameData.LeftFrame.Position = UDim2.fromScale(0.03, 0.55)
+GameData.LeftFrame.AnchorPoint = Vector2.new(0, 1)
+GameData.LeftFrame.BackgroundTransparency = 1
+GameData.LeftFrame.Parent = GameData.GUI
+
+function GameData:CreateButton(text, pos)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.fromScale(0.32, 0.32)
+	b.Position = pos
+	b.Text = text
+	b.Font = Enum.Font.GothamBold
+	b.TextScaled = true
+	b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Parent = self.LeftFrame
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0.25,0)
+	c.Parent = b
+	return b
+end
+
+GameData.Buttons.Forward = GameData:CreateButton("▲", UDim2.fromScale(0.34, 0))
+GameData.Buttons.Back    = GameData:CreateButton("▼", UDim2.fromScale(0.34, 0.68))
+GameData.Buttons.Left    = GameData:CreateButton("◀", UDim2.fromScale(0, 0.34))
+GameData.Buttons.Right   = GameData:CreateButton("▶", UDim2.fromScale(0.68, 0.34))
+
+function GameData:EnableDrone()
+	self.Drone = true
+	self.Yaw = 0
+	self.Pitch = 0
+	self:SetCharacterMove(false)
+	self.Camera.CameraType = Enum.CameraType.Scriptable
+	self:ResetCameraToPlayer()
+	self.GUI.Enabled = true
+end
+
+function GameData:DisableDrone()
+	self.Drone = false
+	self:SetCharacterMove(true)
+	self.Camera.CameraType = Enum.CameraType.Custom
+	self:ResetCameraToPlayer()
+	self.GUI.Enabled = false
+end
+
+GameData.Buttons.Forward.MouseButton1Down:Connect(function()
+	GameData.MoveForward = 1
+end)
+GameData.Buttons.Forward.MouseButton1Up:Connect(function()
+	GameData.MoveForward = 0
+end)
+
+GameData.Buttons.Back.MouseButton1Down:Connect(function()
+	GameData.MoveForward = -1
+end)
+GameData.Buttons.Back.MouseButton1Up:Connect(function()
+	GameData.MoveForward = 0
+end)
+
+GameData.Buttons.Left.MouseButton1Down:Connect(function()
+	GameData.MoveRight = -1
+end)
+GameData.Buttons.Left.MouseButton1Up:Connect(function()
+	GameData.MoveRight = 0
+end)
+
+GameData.Buttons.Right.MouseButton1Down:Connect(function()
+	GameData.MoveRight = 1
+end)
+GameData.Buttons.Right.MouseButton1Up:Connect(function()
+	GameData.MoveRight = 0
+end)
+
+GameData.Services.UIS.TouchMoved:Connect(function(input, gpe)
+	if not GameData.Drone or gpe then return end
+	GameData.Yaw -= input.Delta.X * GameData.Sensitivity
+	GameData.Pitch -= input.Delta.Y * GameData.Sensitivity
+	GameData.Pitch = math.clamp(GameData.Pitch, -80, 80)
+end)
+
+GameData.Services.UIS.InputBegan:Connect(function(input, gpe)
+	if gpe or not GameData.Drone then return end
+	if input.KeyCode == Enum.KeyCode.W then
+		GameData.MoveForward = 1
+	elseif input.KeyCode == Enum.KeyCode.S then
+		GameData.MoveForward = -1
+	elseif input.KeyCode == Enum.KeyCode.A then
+		GameData.MoveRight = -1
+	elseif input.KeyCode == Enum.KeyCode.D then
+		GameData.MoveRight = 1
+	end
+end)
+
+GameData.Services.UIS.InputEnded:Connect(function(input)
+	if not GameData.Drone then return end
+	if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
+		GameData.MoveForward = 0
+	elseif input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.D then
+		GameData.MoveRight = 0
+	end
+end)
+
+GameData.Services.UIS.InputChanged:Connect(function(input, gpe)
+	if not GameData.Drone or gpe then return end
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		GameData.Yaw -= input.Delta.X * GameData.Sensitivity
+		GameData.Pitch -= input.Delta.Y * GameData.Sensitivity
+	end
+	if input.KeyCode == Enum.KeyCode.Thumbstick1 then
+		GameData.MoveRight = input.Position.X
+		GameData.MoveForward = -input.Position.Y
+	end
+	if input.KeyCode == Enum.KeyCode.Thumbstick2 then
+		GameData.Yaw -= input.Position.X * GameData.Sensitivity * 5
+		GameData.Pitch -= input.Position.Y * GameData.Sensitivity * 5
+	end
+	GameData.Pitch = math.clamp(GameData.Pitch, -80, 80)
+end)
+
+GameData.Services.RunService.RenderStepped:Connect(function()
+	if not GameData.Drone then return end
+	local cf =
+		CFrame.new(GameData.Camera.CFrame.Position) *
+		CFrame.Angles(0, math.rad(GameData.Yaw), 0) *
+		CFrame.Angles(math.rad(GameData.Pitch), 0, 0)
+	local move =
+		(cf.LookVector * GameData.MoveForward) +
+		(cf.RightVector * GameData.MoveRight)
+	GameData.Camera.CFrame = cf + (move * GameData.Speed)
+end)
+
+Sec.Player:Toggle({
+    Title = "Drone Camera",
+    Flag = "DroneCamera",
+    Default = false,
+    Callback = function(value)
+        if value then
+            GameData:EnableDrone()
+        else
+            GameData:DisableDrone()
+        end
+    end
+})
+
+
+Sec.Player:Toggle({
+    Title = "Hide Gui Drone",
+    Flag = "HideGuiDrone",
+    Default = false,
+    Callback = function(value)
+        local gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("DroneCameraGUI")
+        gui.Enabled = not value
+    end
 })
 
 local AntiDrown_Enabled = false
@@ -7557,54 +6239,15 @@ Sec.Player:Toggle({
     end
 })
 
-GameData.Netv35 = require(GameData.ReplicatedStoragev35.Packages.Net)
-
-GameData.StopCutsceneRemotev35 =
-    GameData.Netv35:RemoteEvent("StopCutscene")
-
-GameData.PlayCutsceneRemotev35 =
-    GameData.Netv35:RemoteEvent("ReplicateCutscene")
-
-function GameData.enableHideCutscenev35()
-    GameData.StopCutsceneRemotev35:FireServer()
-
-    GameData.CutsceneConnectionv35 =
-        GameData.PlayCutsceneRemotev35.OnClientEvent:Connect(function()
-            task.wait()
-            GameData.StopCutsceneRemotev35:FireServer()
-        end)
-end
-
-function GameData.disableHideCutscenev35()
-    if GameData.CutsceneConnectionv35 then
-        GameData.CutsceneConnectionv35:Disconnect()
-        GameData.CutsceneConnectionv35 = nil
-    end
-end
-
-Sec.Player:Toggle({
-    Title = "Disabled Cutscene",
-    Value = false,
-    Callback = function(statev35)
-        GameData.HideCutsceneEnabledv35 = statev35
-
-        if statev35 then
-            GameData.enableHideCutscenev35()
-        else
-            GameData.disableHideCutscenev35()
-        end
-    end
-})
-
+-- Initialize folder
 GameData.waterVFXFolder = GameData.RS:WaitForChild("VFX")
 
 Sec.Player:Toggle({
     Title = "Remove Skin Effect",
     Flag = "RemoveVFX",
     Default = false,
-    Callback = function(enabled)
-
-        if enabled then
+    Callback = function(value)
+        if value then
             for _, obj in ipairs(GameData.waterVFXFolder:GetChildren()) do
                 if not GameData.storedVFX[obj.Name] then
                     GameData.storedVFX[obj.Name] = obj:Clone()
@@ -7614,10 +6257,8 @@ Sec.Player:Toggle({
 
             if not GameData.childAddedConn then
                 GameData.childAddedConn = GameData.waterVFXFolder.ChildAdded:Connect(function(obj)
-                    if not Sec.Player:Get("RemoveVFX") then return end
-
-                    task.wait()
-                    if obj and obj.Parent then
+                    task.wait(0.05)
+                    if obj and Sec.Player:Get("RemoveVFX") then
                         if not GameData.storedVFX[obj.Name] then
                             GameData.storedVFX[obj.Name] = obj:Clone()
                         end
@@ -7625,7 +6266,6 @@ Sec.Player:Toggle({
                     end
                 end)
             end
-
         else
             if GameData.childAddedConn then
                 GameData.childAddedConn:Disconnect()
@@ -7727,139 +6367,6 @@ Sec.Player:Toggle({
     Default = false,
     Callback = function(value)
         GameData:SetQuestVisible(not value)
-    end
-})
-
-Sec.Player2 = Tabs.Player:Section({
-    Title = "Anti Afk",
-    Box = true,
-    BoxBorder = true,
-    Opened = true,
-})
-
-GameData.AntiAFKParagraph = Sec.Player2:Paragraph({
-    Title = "Anti AFK Time",
-    Flag = "AntiAFK",
-    Desc = "AFK: 0 Min 0 Sec"
-})
-
-function GameData.resetAFK()
-    GameData.lastInput = tick()
-end
-
-GameData.connections.began =
-    GameData.UserInputService.InputBegan:Connect(GameData.resetAFK)
-
-GameData.connections.changed =
-    GameData.UserInputService.InputChanged:Connect(GameData.resetAFK)
-
-GameData.connections.ended =
-    GameData.UserInputService.InputEnded:Connect(GameData.resetAFK)
-
-task.spawn(function()
-    while true do
-        task.wait(1)
-
-        GameData.runtime.totalSeconds = math.floor(tick() - GameData.lastInput)
-        GameData.runtime.minutes = math.floor(GameData.runtime.totalSeconds / 60)
-        GameData.runtime.seconds = GameData.runtime.totalSeconds % 60
-
-        GameData.AntiAFKParagraph:SetDesc(
-            "AFK: " .. GameData.runtime.minutes .. " Min " .. GameData.runtime.seconds .. " Sec"
-        )
-
-        if GameData.runtime.totalSeconds >= GameData.intervalMinutes * 60 then
-            GameData.UserInputService.MouseIconEnabled = true
-            task.wait(GameData.showSeconds)
-            GameData.UserInputService.MouseIconEnabled = false
-            GameData.lastInput = tick()
-        end
-    end
-end)
-
-function GameData:StartAntiAfk()
-    if self.AntiAfkThread then return end
-
-    self.AntiAfkThread = task.spawn(function()
-        while GameData.AntiAfkRunning do
-
-            GameData.VIM:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
-            task.wait(0.05)
-            GameData.VIM:SendKeyEvent(false, Enum.KeyCode.Escape, false, game)
-
-            task.wait(0.15)
-
-            GameData.VIM:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
-            task.wait(0.05)
-            GameData.VIM:SendKeyEvent(false, Enum.KeyCode.Escape, false, game)
-
-            task.wait(600)
-        end
-
-        GameData.AntiAfkThread = nil
-    end)
-end
-
-Sec.Player2:Toggle({
-    Title = "Anti AFK",
-    Desc = "Prevent kick when idle",
-    Flag = "AntiAFK",
-    Value = false,
-    Callback = function(value)
-        GameData.AntiAfkRunning = value
-
-        if value then
-            GameData:StartAntiAfk()
-        end
-    end
-})
-
-Sec.Player5 = Tabs.Player:Section({
-    Title = "Anti Staff (Coming Soon)",
-    Box = true,
-    BoxBorder = true,
-    Opened = true,
-})
-
-Sec.Player4 = Tabs.Player:Section({
-    Title = "Boost",
-    Box = true,
-    BoxBorder = true,
-    Opened = true,
-})
-
-GameData.BlackGuiv27 = Instance.new("ScreenGui")
-GameData.BlackGuiv27.Name = "BlackScreenGuiv27"
-GameData.BlackGuiv27.IgnoreGuiInset = true
-GameData.BlackGuiv27.ResetOnSpawn = false
-GameData.BlackGuiv27.Parent = GameData.Playerv27:WaitForChild("PlayerGui")
-
-GameData.BlackFramev27 = Instance.new("Frame")
-GameData.BlackFramev27.Size = UDim2.new(1, 0, 1, 0)
-GameData.BlackFramev27.Position = UDim2.new(0, 0, 0, 0)
-GameData.BlackFramev27.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-GameData.BlackFramev27.BorderSizePixel = 0
-GameData.BlackFramev27.Visible = false
-GameData.BlackFramev27.ZIndex = 999999
-GameData.BlackFramev27.Parent = GameData.BlackGuiv27
-
-GameData.AFKTextv27 = Instance.new("TextLabel")
-GameData.AFKTextv27.Size = UDim2.new(1, 0, 0, 60)
-GameData.AFKTextv27.Position = UDim2.new(0, 0, 0.5, -30)
-GameData.AFKTextv27.BackgroundTransparency = 1
-GameData.AFKTextv27.Text = "AFK MODE"
-GameData.AFKTextv27.TextColor3 = Color3.fromRGB(255, 255, 255)
-GameData.AFKTextv27.TextScaled = true
-GameData.AFKTextv27.Font = Enum.Font.GothamBold
-GameData.AFKTextv27.ZIndex = 1000000
-GameData.AFKTextv27.Parent = GameData.BlackFramev27
-
-Sec.Player4:Toggle({
-    Title = "Black Screen",
-    Flag = "BlackScreen",
-    Value = false,
-    Callback = function(state)
-        GameData.BlackFramev27.Visible = state
     end
 })
 
@@ -7989,7 +6496,7 @@ function GameData:StopBoostv8()
 	table.clear(self.Connectionsv8)
 end
 
-Sec.Player4:Toggle({
+Sec.Player:Toggle({
     Title = "Boost Fps",
     Flag = "BoostFps",
     Default = false,
@@ -8002,65 +6509,90 @@ Sec.Player4:Toggle({
     end
 })
 
-GameData.Playerv25 = GameData.Playersv25.LocalPlayer
+Sec.Player2 = Tabs.Player:Section({
+    Title = "Anti Afk",
+    Box = true,
+    BoxBorder = true,
+    Opened = true,
+})
 
-Sec.Player4:Button({
-    Title = "Boost CPU",
-    Locked = false,
-    Callback = function()
-        if GameData.BoostRunningv25 then return end
-        GameData.BoostRunningv25 = true
+GameData.AntiAFKParagraph = Sec.Player2:Paragraph({
+    Title = "Anti AFK Time",
+    Flag = "AntiAFK",
+    Desc = "AFK: 0 Min 0 Sec"
+})
 
-        pcall(function()
-            GameData.Lightingv25.GlobalShadows = false
-            GameData.Lightingv25.FogEnd = 9e9
-            GameData.Lightingv25.Brightness = 1
-            GameData.Lightingv25.EnvironmentDiffuseScale = 0
-            GameData.Lightingv25.EnvironmentSpecularScale = 0
+function GameData.resetAFK()
+    GameData.lastInput = tick()
+end
 
-            for _, v in pairs(GameData.Lightingv25:GetChildren()) do
-                if v:IsA("PostEffect") then
-                    v.Enabled = false
-                end
-            end
-        end)
+GameData.connections.began =
+    GameData.UserInputService.InputBegan:Connect(GameData.resetAFK)
 
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("ParticleEmitter")
-            or v:IsA("Trail")
-            or v:IsA("Smoke")
-            or v:IsA("Fire")
-            or v:IsA("Sparkles") then
-                v.Enabled = false
-            elseif v:IsA("Decal") or v:IsA("Texture") then
-                v.Transparency = 1
-            elseif v:IsA("BasePart") then
-                v.CastShadow = false
-                v.Material = Enum.Material.Plastic
-                v.Reflectance = 0
-            end
+GameData.connections.changed =
+    GameData.UserInputService.InputChanged:Connect(GameData.resetAFK)
+
+GameData.connections.ended =
+    GameData.UserInputService.InputEnded:Connect(GameData.resetAFK)
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+
+        GameData.runtime.totalSeconds = math.floor(tick() - GameData.lastInput)
+        GameData.runtime.minutes = math.floor(GameData.runtime.totalSeconds / 60)
+        GameData.runtime.seconds = GameData.runtime.totalSeconds % 60
+
+        GameData.AntiAFKParagraph:SetDesc(
+            "AFK: " .. GameData.runtime.minutes .. " Min " .. GameData.runtime.seconds .. " Sec"
+        )
+
+        if GameData.runtime.totalSeconds >= GameData.intervalMinutes * 60 then
+            GameData.UserInputService.MouseIconEnabled = true
+            task.wait(GameData.showSeconds)
+            GameData.UserInputService.MouseIconEnabled = false
+            GameData.lastInput = tick()
+        end
+    end
+end)
+
+function GameData:StartAntiAfk()
+    if self.AntiAfkThread then return end
+
+    self.AntiAfkThread = task.spawn(function()
+        while GameData.AntiAfkRunning do
+
+            GameData.VIM:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
+            task.wait(0.05)
+            GameData.VIM:SendKeyEvent(false, Enum.KeyCode.Escape, false, game)
+
+            task.wait(0.15)
+
+            GameData.VIM:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
+            task.wait(0.05)
+            GameData.VIM:SendKeyEvent(false, Enum.KeyCode.Escape, false, game)
+
+            task.wait(600)
         end
 
-        if GameData.Playerv25.Character then
-            for _, v in pairs(GameData.Playerv25.Character:GetChildren()) do
-                if v:IsA("Accessory") or v:IsA("Hat") then
-                    v:Destroy()
-                end
-            end
+        GameData.AntiAfkThread = nil
+    end)
+end
 
-            local head = GameData.Playerv25.Character:FindFirstChild("Head")
-            if head then
-                head.Transparency = 1
-                head.CanCollide = false
+Sec.Player2:Toggle({
+    Title = "Anti AFK",
+    Desc = "Prevent kick when idle",
+    Flag = "AntiAFK",
+    Value = false,
+    Callback = function(value)
+        GameData.AntiAfkRunning = value
 
-                local face = head:FindFirstChildWhichIsA("Decal")
-                if face then
-                    face:Destroy()
-                end
-            end
+        if value then
+            GameData:StartAntiAfk()
         end
     end
 })
+
 
 Sec.Player3 = Tabs.Player:Section({
     Title = "User Settings",
@@ -8288,58 +6820,6 @@ Sec.Config1:Button({
     end
 })
 
-local function AutoLoadConfig()
-    if not AutoFeatureEnabled then return end
-    Window.CurrentConfig = ConfigManager:CreateConfig(AutoConfigName)
-    if not Window.CurrentConfig:Load() then
-        Window.CurrentConfig:Save()
-    end
-end
-
-local function AutoSaveConfig()
-    if not AutoFeatureEnabled then return end
-    if Window.CurrentConfig then
-        Window.CurrentConfig:Save()
-    end
-end
-
-Sec.Config1:Toggle({
-    Title = "Auto Save & Load",
-    Flag = "AutoSaveLoad",
-    Desc = "Automatically save and load config",
-    Value = false, -- DEFAULT OFF
-    Callback = function(state)
-        AutoFeatureEnabled = state
-
-        if state then
-            AutoLoadConfig() -- load saat ON
-        end
-
-        -- save config setiap toggle berubah
-        if Window.CurrentConfig then
-            Window.CurrentConfig:Save()
-        end
-    end
-})
-
-Sec.Config1:Button({
-    Title = "Delete Config",
-    Locked = false,
-    Callback = function()
-        ConfigManager:DeleteConfig(AutoConfigName)
-        if Window.CurrentConfig then
-            Window.CurrentConfig = nil
-        end
-    end
-})
-
-spawn(function()
-    while true do
-        task.wait(5)
-        AutoSaveConfig()
-    end
-end)
-
 Sec.Config2 = Tabs.Config:Section({
     Title = "Bug Reporter",
     Box = true,
@@ -8507,6 +6987,9 @@ GameData.ScreenGui.IgnoreGuiInset = true
 GameData.ScreenGui.ResetOnSpawn = false
 GameData.ScreenGui.Parent = GameData.CoreGui
 
+-------------------------------------------------------------
+-- FRAME
+-------------------------------------------------------------
 GameData.ToggleFrame = Instance.new("Frame")
 GameData.ToggleFrame.Parent = GameData.ScreenGui
 GameData.ToggleFrame.Size = UDim2.new(0, 50, 0, 50)
@@ -8554,19 +7037,15 @@ GameData.ToggleBtn.Position = UDim2.new(0.5, -20, 0.5, -20)
 GameData.ToggleBtn.BackgroundTransparency = 1
 GameData.ToggleBtn.Image = "rbxassetid://123906607434048"
 GameData.ToggleBtn.AutoButtonColor = false
-GameData.ToggleBtn.Active = true
-GameData.ToggleBtn.Selectable = true
 
 -------------------------------------------------------------
--- DRAG SYSTEM UNTUK SEMUA DEVICE (FRAME + BUTTON)
+-- DRAG SYSTEM (PC + MOBILE FIXED)
 -------------------------------------------------------------
 local dragInput
 local dragStart
 local startPos
-local isDragging = false
 
-local function updatePosition(input)
-    if not dragStart or not startPos then return end
+local function update(input)
     local delta = input.Position - dragStart
     GameData.ToggleFrame.Position = UDim2.new(
         startPos.X.Scale,
@@ -8576,51 +7055,35 @@ local function updatePosition(input)
     )
 end
 
-local function startDrag(input)
+GameData.ToggleFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
+
         GameData.Dragging = true
-        isDragging = true
         dragStart = input.Position
         startPos = GameData.ToggleFrame.Position
+        dragInput = input
     end
-end
+end)
 
-local function endDrag(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
+GameData.ToggleFrame.InputChanged:Connect(function(input)
+    if input == dragInput and GameData.Dragging then
+        update(input)
+    end
+end)
+
+GameData.ToggleFrame.InputEnded:Connect(function(input)
+    if input == dragInput then
         GameData.Dragging = false
-        isDragging = false
-        dragStart = nil
-        startPos = nil
-    end
-end
-
-GameData.ToggleFrame.InputBegan:Connect(startDrag)
-GameData.ToggleFrame.InputEnded:Connect(endDrag)
-
-GameData.ToggleBtn.InputBegan:Connect(startDrag)
-GameData.ToggleBtn.InputEnded:Connect(endDrag)
-
-GameData.UIS.InputChanged:Connect(function(input)
-    if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement 
-        or input.UserInputType == Enum.UserInputType.Touch) then
-        updatePosition(input)
+        dragInput = nil
     end
 end)
 
 -------------------------------------------------------------
--- BUTTON CLICK → TOGGLE WINDOW (TANPA CLICK DELAY)
+-- BUTTON CLICK → TOGGLE WINDOW
 -------------------------------------------------------------
-local clickDebounce = false
-
 GameData.ToggleBtn.MouseButton1Click:Connect(function()
-    if isDragging or GameData.Dragging then return end
-    
-    if clickDebounce then return end
-    clickDebounce = true
-    
-    -- Animasi klik tanpa delay
+
     GameData.TweenService:Create(GameData.ToggleBtn, TweenInfo.new(0.08), {
         Size = UDim2.new(0, 35, 0, 35)
     }):Play()
@@ -8631,64 +7094,29 @@ GameData.ToggleBtn.MouseButton1Click:Connect(function()
         Size = UDim2.new(0, 40, 0, 40)
     }):Play()
 
-    -- Langsung toggle window tanpa delay tambahan
     if Window and Window.Toggle then
         Window:Toggle()
     end
-    
-    -- Reset debounce tanpa delay
-    clickDebounce = false
 end)
 
-GameData.ToggleBtn.TouchTap:Connect(function()
-    if isDragging or GameData.Dragging then return end
-    
-    if clickDebounce then return end
-    clickDebounce = true
-    
-    -- Animasi klik tanpa delay
-    GameData.TweenService:Create(GameData.ToggleBtn, TweenInfo.new(0.08), {
-        Size = UDim2.new(0, 35, 0, 35)
-    }):Play()
-
-    task.wait(0.08)
-
-    GameData.TweenService:Create(GameData.ToggleBtn, TweenInfo.new(0.12), {
-        Size = UDim2.new(0, 40, 0, 40)
-    }):Play()
-
-    -- Langsung toggle window tanpa delay tambahan
-    if Window and Window.Toggle then
-        Window:Toggle()
-    end
-    
-    -- Reset debounce tanpa delay
-    clickDebounce = false
-end)
-
--- Hanya jalankan kode Window jika Window didefinisikan
+-------------------------------------------------------------
+-- WINDOW EVENTS (API)
+-------------------------------------------------------------
 if Window then
-    -- Gunakan if statements untuk memeriksa apakah metode tersedia
-    if type(Window.OnOpen) == "function" then
-        Window:OnOpen(function()
-            -- Handler window terbuka
-        end)
-    end
-    
-    if type(Window.OnClose) == "function" then
-        Window:OnClose(function()
-            -- Handler window tertutup
-        end)
-    end
-    
-    if type(Window.OnDestroy) == "function" then
-        Window:OnDestroy(function()
-            if GameData.ScreenGui then
-                GameData.ScreenGui:Destroy()
-                GameData.ScreenGui = nil
-            end
-        end)
-    end
+    Window:OnOpen(function()
+        -- on open
+    end)
+
+    Window:OnClose(function()
+        -- on close
+    end)
+
+    Window:OnDestroy(function()
+        if GameData.ScreenGui then
+            GameData.ScreenGui:Destroy()
+            GameData.ScreenGui = nil
+        end
+    end)
 end
 
 	--================ Wind Ui Title Gradiant ===============
