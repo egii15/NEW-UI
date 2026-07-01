@@ -24,32 +24,6 @@ local MenuIcon = ModernV2:CreateMenuIcon({
 	Draggable = true,
 })
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-local IsDeveloper =
-    LocalPlayer.Name == "Miiraculouss"
-
-if IsDeveloper then
-
-    local Dev = window:AddTab({
-        Name = "👑 Developer",
-        Icon = "lucide:crown",
-        Type = "Single"
-    })
-
-    local DevSec = Dev:AddSection({
-        Name = "Developer",
-        Position = "Center"
-    })
-
-    DevSec:AddParagraph({
-        Name = "Welcome",
-        Content = "Hello Developer 💕"
-    })
-
-end
-
 -- Create the main window.
 local window = ModernV2:Window({
 	Title = "ModernV2",
