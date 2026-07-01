@@ -1,5 +1,29 @@
 local ModernV2 = loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintLibrary/refs/heads/main/YintUI"))()
 
+-- Register and apply a custom theme.
+ModernV2:AddTheme({
+	Name = "FayintX Style",
+	Accent = Color3.fromRGB(78, 127, 252),
+	Background = Color3.fromRGB(8, 8, 13),
+	Surface = Color3.fromRGB(20, 22, 27),
+	Outline = Color3.fromRGB(45, 48, 58),
+	Text = Color3.fromRGB(255, 255, 255),
+	Placeholder = Color3.fromRGB(140, 140, 155),
+	Button = Color3.fromRGB(78, 127, 252),
+	Icon = Color3.fromRGB(255, 255, 255),
+})
+
+-- Create the floating menu icon before/after window creation.
+local MenuIcon = ModernV2:CreateMenuIcon({
+	Image = "grid",
+	Size = 48,
+	IconColor = Color3.fromRGB(255, 255, 255),
+	BGColor = Color3.fromRGB(20, 22, 27),
+	StrokeColor = ModernV2.AccentColor,
+	StrokeThick = 1.5,
+	Draggable = true,
+})
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -25,30 +49,6 @@ if IsDeveloper then
     })
 
 end
-
--- Register and apply a custom theme.
-ModernV2:AddTheme({
-	Name = "FayintX Style",
-	Accent = Color3.fromRGB(78, 127, 252),
-	Background = Color3.fromRGB(8, 8, 13),
-	Surface = Color3.fromRGB(20, 22, 27),
-	Outline = Color3.fromRGB(45, 48, 58),
-	Text = Color3.fromRGB(255, 255, 255),
-	Placeholder = Color3.fromRGB(140, 140, 155),
-	Button = Color3.fromRGB(78, 127, 252),
-	Icon = Color3.fromRGB(255, 255, 255),
-})
-
--- Create the floating menu icon before/after window creation.
-local MenuIcon = ModernV2:CreateMenuIcon({
-	Image = "grid",
-	Size = 48,
-	IconColor = Color3.fromRGB(255, 255, 255),
-	BGColor = Color3.fromRGB(20, 22, 27),
-	StrokeColor = ModernV2.AccentColor,
-	StrokeThick = 1.5,
-	Draggable = true,
-})
 
 -- Create the main window.
 local window = ModernV2:Window({
