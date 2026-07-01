@@ -1,5 +1,31 @@
 local ModernV2 = loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintLibrary/refs/heads/main/YintUI"))()
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local IsDeveloper =
+    LocalPlayer.Name == "Miiraculouss"
+
+if IsDeveloper then
+
+    local Dev = window:AddTab({
+        Name = "👑 Developer",
+        Icon = "lucide:crown",
+        Type = "Single"
+    })
+
+    local DevSec = Dev:AddSection({
+        Name = "Developer",
+        Position = "Center"
+    })
+
+    DevSec:AddParagraph({
+        Name = "Welcome",
+        Content = "Hello Developer 💕"
+    })
+
+end
+
 -- Register and apply a custom theme.
 ModernV2:AddTheme({
 	Name = "FayintX Style",
