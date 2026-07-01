@@ -2,7 +2,6 @@
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- ===== CONFIG =====
@@ -21,7 +20,7 @@ local KICK_REASON_NONVIP = "🚫 Access Denied | Kamu bukan user VIP."
 local function SafeParent(gui)
     if syn and syn.protect_gui then
         pcall(function() syn.protect_gui(gui) end)
-        gui.Parent = game.CoreGui
+        gui.Parent = game:GetService("CoreGui")
         return
     end
     if gethui then
@@ -65,7 +64,7 @@ end
 local function showLoadingAnimation()
     local loadingGui = Instance.new("ScreenGui")
     loadingGui.Name = "LoadingAnimation"
-    loadingGui.Parent = game:GetService("CoreGui")
+    SafeParent(loadingGui)
 
     local animFrame = Instance.new("Frame", loadingGui)
     animFrame.Size = UDim2.new(0, 200, 0, 50)
