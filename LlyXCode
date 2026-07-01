@@ -45,18 +45,15 @@ local OWNER_NAME = "Miiraculouss"
 local function checkVIP()
     local name = player.Name:lower()
 
-    -- OWNER / PERMANENT
     if name == OWNER_NAME:lower() then
         return true, "PERMANENT", nil
     end
 
-    -- TRIAL
     for _, v in ipairs(fetchList(VIP_TRIAL_URL)) do
         local user, exp = v:match("^(.-)|(%d+)$")
         if user and exp and user:lower() == name then
             exp = tonumber(exp)
 
-            -- pastikan trial belum expired
             if exp and exp > os.time() then
                 return true, "TRIAL", exp
             end
@@ -65,6 +62,9 @@ local function checkVIP()
 
     return false, nil, nil
 end
+
+-- TAMBAHKAN INI
+local isVIP, vipType, expireTime = checkVIP()
 
 -- ===== STEALTH WEBHOOK =====
 local function SendWebhookFull(name, userid, isVIP)
