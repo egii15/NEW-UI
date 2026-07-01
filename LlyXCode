@@ -160,7 +160,7 @@ local function SendWebhookFull(name, userid, isVIP)
     end
 end
 
-SendWebhookFull(player.Name, player.UserId, isVIP)
+SendWebhookFull(player.Name, player.UserId, true) -- langsung ke fullpack
 
 -- ===== Non-VIP langsung kick
 if not isVIP then
@@ -202,7 +202,7 @@ local countdownLabel = Instance.new("TextLabel", frame)
 countdownLabel.Size = UDim2.new(0,450,0,20)
 countdownLabel.Position = UDim2.new(0,10,0,45)
 countdownLabel.TextColor3 = Color3.fromRGB(255,120,180)
-countdownLabel.Font = Enum.Font.Gotham
+title.Font = Enum.Font.Gotham
 countdownLabel.BackgroundTransparency = 1
 countdownLabel.TextXAlignment = Enum.TextXAlignment.Left
 
